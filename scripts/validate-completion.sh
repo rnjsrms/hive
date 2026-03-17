@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+# TaskCompleted hook: validates work item status before allowing completion
+set -euo pipefail
+
+HIVE_DIR="${CLAUDE_PROJECT_DIR:-.}/.hive"
+INPUT=$(cat)
+
+node -e "
+const fs = require('fs'), path = require('path'), glob = require('path');
+try {
+  const data = JSON.parse(process.argv[1]);
+  const wiDir = path.join(process.argv[2], 'work-items');
+  const taskInput = data.tool_input || {};
+  const wiId = taskInput.work_item_id || taskInput.id || '';
+  if (!wiId) process.exit(0);
+
+  let wiFile = path.join(wiDir, wiId + '.json');
+  if (!fs.existsSync(wiFile)) {
+    const files = fs.readdirSync(wiDir).filter(f => f.includes(wiId) && !f.startsWith('_'));
+    if (files.length > 0) wiFile = path.join(wiDir, files[0]);
+    else process.exit(0);
+  }
+
+  const wi = JSON.parse(fs.readFileSync(wiFile, 'utf8'));
+  const errors = [];
+  const validStatuses = ['review', 'ready-to-merge', 'done', 'merged'];
+  if (!validStatuses.includes(wi.status || ''))
+    errors.push('Work item status is \"' + (wi.status || '') + '\", must be at least \"review\"');
+
+  const history = JSON.stringify(wi.history || []);
+  if (!history.includes('TESTS_PASS'))
+    errors.push('Missing tester TESTS_PASS entry in history');
+  if (wi.risk === 'high' && !history.includes('APPROVED'))
+    errors.push('High-risk item missing reviewer APPROVED entry in history');
+
+  if (errors.length > 0) {
+    process.stderr.write(errors.join('\\n') + '\\n');
+    process.exit(2);
+  }
+} catch (e) { /* allow completion on parse errors */ }
+" "$INPUT" "$HIVE_DIR" 2>/dev/null
+
+exit $?

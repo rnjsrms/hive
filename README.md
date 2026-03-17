@@ -1,132 +1,107 @@
 # Hive
 
-Multi-agent orchestration plugin for [Claude Code](https://claude.com/claude-code), inspired by [Gastown](https://github.com/steveyegge/gastown). Built with pure Claude Code Agent Teams.
+Hive is a multi-agent orchestration framework for Claude Code. It enables a team of
+specialized AI agents to collaborate on software projects using structured workflows,
+shared state files, and git-based coordination. Give it an objective and it handles
+planning, task breakdown, implementation, review, and testing automatically.
 
-## Install
+## Quick Start
 
 ```bash
-# Add the marketplace
-/plugin marketplace add rnjsrms/hive
-
-# Install the plugin
-/plugin install hive@hive
+cd hive
+claude
 ```
 
-Or test locally:
-```bash
-claude --plugin-dir ~/hive-marketplace/plugins/hive
-```
+Then describe your objective. The lead agent will interview you to clarify requirements,
+create a plan, spin up a team, and begin execution.
 
-## What It Does
+## How the Workflow Works
 
-When enabled, Hive replaces the main Claude session with an orchestration lead that coordinates a full development team:
-
-1. **Interviews** you with 10-15 comprehensive questions about your objective
-2. **Plans** using /plan mode — work items, risks, dependencies, acceptance criteria
-3. **Spawns** agent teammates (developers, reviewer, tester, researcher)
-4. **Coordinates** parallel development in isolated git worktrees
-5. **Validates** via risk-based pipeline (code review + tests)
-6. **Reports** feature branches ready for you to merge
+1. **Interview** -- The lead agent asks clarifying questions about your objective to
+   understand scope, constraints, and priorities.
+2. **Plan** -- A structured plan is created in `.hive/plans/` breaking the objective
+   into work items with dependencies, risk levels, and acceptance criteria.
+3. **Team** -- Agents are spawned for each role (developers, reviewer, tester,
+   researcher) and registered in `.hive/agents/`.
+4. **Execute** -- Developers pick up work items, implement on feature branches, and
+   update status in `.hive/work-items/`. The lead coordinates via message passing.
+5. **Validate** -- The reviewer checks code quality and the tester runs verification.
+   Completion hooks enforce that items pass review and testing before merging.
 
 ## Architecture
 
-```
-                        YOU
-                         |
-                    [Hive Lead]
-                   /    |    \      \
-          developer  reviewer  tester  researcher
-          developer
-          developer
-```
+Hive uses a role-based agent hierarchy:
 
-| Agent | Role |
-|-------|------|
-| **Lead** (main session) | Interviews, plans, coordinates, monitors — never writes code |
-| **Developer** (1-5 instances) | Implements features in worktrees with enterprise quality |
-| **Reviewer** | Reviews code, runs /simplify, challenges design decisions |
-| **Tester** | Writes tests, runs suites, validates correctness |
-| **Researcher** | Explores codebase, researches APIs, finds reusable patterns |
+| Role         | Responsibility                                          |
+|--------------|---------------------------------------------------------|
+| **Lead**     | Plans work, assigns tasks, coordinates the team         |
+| **Developer**| Implements features on feature branches                 |
+| **Reviewer** | Reviews code, approves or requests changes              |
+| **Tester**   | Runs tests, verifies acceptance criteria                |
+| **Researcher**| Investigates unknowns, spikes, and technical questions |
 
-## Key Features
+All agents communicate through structured messages and share state via `.hive/` files.
 
-- **No subagents** — the main session IS the Hive lead (via plugin agent replacement)
-- **Agent teams** — each worker gets its own full 1M-token context window
-- **Gitflow** — agents only work on `feature/*` branches, never touch main/develop
-- **Enterprise quality** — no hardcoding, security-first, performance-aware, reuse existing code
-- **Agents challenge assumptions** — push back on suboptimal approaches and suggest improvements
-- **Risk-based validation** — high-risk items get full review + tests; low-risk items get tests only
-- **Persistent ledgers** — all communications and task state auto-logged by hooks
-- **Crash recovery** — resume in-progress work on restart (state persisted in `.hive/`)
-- **Health monitoring** — `/loop 3m` detects stuck agents and reassigns work
-- **Two-stage completion** — agents finish, you merge at your own pace
+## Gitflow
 
-## How It Works
+Agents only work on feature branches, never directly on main. The typical flow:
 
-### State Management
+- Lead creates a feature branch for each work item (e.g., `feature/WI-0001-add-auth`)
+- Developer implements on that branch
+- Reviewer and tester validate the branch
+- Lead marks branches as ready to merge when all checks pass
+- You merge into main at your discretion
 
-Hive bootstraps a `.hive/` directory in your project:
+## Checking Status
 
-```
-.hive/
-├── plans/              # Interview plans
-├── research/           # Research findings
-├── work-items/         # Task state (JSON per item)
-├── convoys/            # Work bundles
-├── agents/             # Agent registry + heartbeats
-└── logs/
-    ├── activity.jsonl        # All agent actions
-    ├── communications.jsonl  # Every message (auto-logged by hook)
-    ├── task-ledger.jsonl     # Every task change (auto-logged by hook)
-    └── decisions.jsonl       # Lead's decision rationale
-```
+All project state lives in `.hive/`:
 
-All state is auto-committed to git by hooks, providing full version history.
+- `.hive/work-items/_index.json` -- list of all work items and their status
+- `.hive/convoys/_index.json` -- active execution groups
+- `.hive/agents/_index.json` -- registered agents and their roles
+- `.hive/plans/` -- planning documents
+- `.hive/logs/activity.jsonl` -- general activity log
+- `.hive/logs/communications.jsonl` -- inter-agent message log
+- `.hive/logs/task-ledger.jsonl` -- task creation and update log
+- `.hive/logs/decisions.jsonl` -- decision records
 
-### Hooks (bundled with plugin)
+## Resuming After a Crash
 
-| Hook | Trigger | Action |
-|------|---------|--------|
-| Communication ledger | PostToolUse(SendMessage) | Logs every message to communications.jsonl |
-| Task ledger | PostToolUse(TaskCreate/Update) | Logs every task change to task-ledger.jsonl |
-| Auto-commit | PostToolUse(Write/Edit on .hive/) | Git commits state changes automatically |
-| Completion gate | TaskCompleted | Blocks completion without TESTS_PASS + reviewer APPROVED (high-risk) |
-| Idle prevention | TeammateIdle | Keeps workers active when unassigned work exists |
-| Desktop notification | Notification | Windows toast notification on milestones |
-
-### Validation Pipeline
-
-```
-HIGH risk (auth, data, APIs):
-  developer → reviewer (/simplify) → tester → ready-to-merge
-
-MEDIUM risk (features, refactors):
-  developer → reviewer → tester → ready-to-merge
-
-LOW risk (config, docs):
-  developer → tester → ready-to-merge
-```
-
-Agents never merge — feature branches are left for you to merge when ready.
-
-## Enable / Disable
+If a session is interrupted, just start Claude again:
 
 ```bash
-# Per-project
-claude plugin enable hive --scope local
-claude plugin disable hive --scope local
-
-# Globally
-claude plugin enable hive --scope user
-claude plugin disable hive --scope user
+cd hive
+claude
 ```
 
-## Requirements
+The lead agent detects in-progress convoys and work items by reading `.hive/` state
+files. It will resume where it left off -- reassigning stalled work items and
+continuing the active plan.
 
-- Claude Code with Agent Teams enabled (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`)
-- Node.js (for hook scripts)
-- Git
+## Ready-to-Merge Branches
 
-## License
+When work items pass review and testing, the lead updates their status to
+`ready-to-merge`. Check for branches ready to merge:
 
-MIT
+```bash
+cat .hive/work-items/_index.json | python3 -c "
+import json, sys
+items = json.load(sys.stdin).get('items', [])
+for i in items:
+    if i.get('status') == 'ready-to-merge':
+        print(f\"{i.get('id')}: {i.get('title')} -> {i.get('branch')}\")
+"
+```
+
+Or simply ask the lead agent to list branches ready for merge.
+
+## Hooks
+
+Hive uses Claude Code hooks (configured in `.claude/settings.json`) to:
+
+- **Log communications** between agents to `communications.jsonl`
+- **Log task changes** (create/update) to `task-ledger.jsonl`
+- **Auto-commit** `.hive/` state changes to git after each write
+- **Validate completion** ensuring work items pass review and testing
+- **Check idle work** prompting idle agents to pick up unassigned items
+- **Send notifications** via Windows desktop notifications
