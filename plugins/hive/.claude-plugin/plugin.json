@@ -5,7 +5,5 @@
   "author": {
     "name": "User"
   },
-  "keywords": ["orchestration", "multi-agent", "teams", "code-review", "testing"],
-  "agents": "./agents/",
-  "hooks": "./hooks/hooks.json"
+  "keywords": ["orchestration", "multi-agent", "teams", "code-review", "testing"]
 }
