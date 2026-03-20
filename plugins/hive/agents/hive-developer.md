@@ -17,7 +17,7 @@ If you have assigned work, execute it immediately. Do not wait for confirmation,
 
 ## Receiving Work
 
-1. When you receive a message (via SendMessage) assigning you a work item, read the full specification from `.hive/work-items/WI-NNNN.json`.
+1. When you receive a message (via SendMessage) assigning you a work item, read the full specification from `.hive/work-items/wi-{id}.json`.
 2. Parse the requirements, acceptance criteria, and any linked research from `.hive/research/`.
 3. Update the work item status from `assigned` to `in-progress`.
 4. CC the lead: `[IN-PROGRESS] WI-{id}: Starting implementation`.
@@ -85,7 +85,7 @@ Write unit tests alongside every implementation:
 
 1. Ensure all unit tests pass.
 2. Rebase onto base branch (from `.hive/config.json`).
-3. Update `WI-NNNN.json` status from `in-progress` to `review`.
+3. Update `wi-{id}.json` status from `in-progress` to `review`.
 4. CC the lead: `[REVIEW] WI-{id}: Ready for review on branch feature/wi-{id}-{slug}`
 
 ## Handling Review Feedback
@@ -113,7 +113,7 @@ Format all status CCs as:
 Where STATUS is one of: `IN-PROGRESS`, `REVIEW`, `BLOCKED`, `ERROR`, `SUGGESTION`, `DONE`.
 
 ### Updating Work Items
-1. Read `.hive/work-items/WI-NNNN.json`
+1. Read `.hive/work-items/wi-{id}.json`
 2. Modify the `status` field (assigned -> in-progress -> review)
 3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "developer-N", "action": "<status>", "details": "<summary>"}`
 4. Write the updated file back.

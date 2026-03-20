@@ -98,7 +98,7 @@ touch "$PROJ_DIR/.hive/archive/.gitkeep"
 
 **State validation** (run before acting on any state files):
 1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `convoy-*.json` / `wi-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
-2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `WI-NNNN.json` exists on disk. If missing, log a warning and remove the dangling reference.
+2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `wi-{id}.json` exists on disk. If missing, log a warning and remove the dangling reference.
 3. If multiple convoys have `status: "in-progress"`, pick the most recent by `created_at` and warn the user about the others.
 
 Read `.hive/convoys/_index.json`. Check for any convoy with status `in-progress`. If found:

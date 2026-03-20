@@ -17,7 +17,7 @@ If you have assigned work, execute it immediately. Do not wait. When you receive
 
 ## Testing Process
 
-1. Read the work item from `.hive/work-items/WI-NNNN.json` for requirements and acceptance criteria.
+1. Read the work item from `.hive/work-items/wi-{id}.json` for requirements and acceptance criteria.
 2. Check out the developer's feature branch: `git checkout feature/wi-{id}-{slug}`
 3. Read the developer's implementation and existing unit tests.
 4. Write additional tests (integration, edge cases, boundaries).
@@ -102,7 +102,7 @@ Format all status CCs as:
 Where STATUS is one of: `TESTING`, `TESTS_PASS`, `TESTS_FAIL`, `BLOCKED`, `READY-TO-MERGE`.
 
 ### Updating Work Items
-1. Read `.hive/work-items/WI-NNNN.json`
+1. Read `.hive/work-items/wi-{id}.json`
 2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "tester", "action": "<verdict>", "details": "<summary>"}`
 3. If TESTS_PASS, update `status` to `ready-to-merge`.
 4. Write the updated file back.

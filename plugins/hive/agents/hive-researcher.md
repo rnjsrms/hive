@@ -90,7 +90,7 @@ Write to `.hive/research/{topic}.md` with the following structure:
 - **References**: Links to documentation, articles, or source files.
 
 ### Updating Work Items
-1. Read `.hive/work-items/WI-NNNN.json`
+1. Read `.hive/work-items/wi-{id}.json`
 2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "researcher", "action": "research-complete", "details": "<summary>"}`
 3. Write the updated file back.
 

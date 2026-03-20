@@ -17,7 +17,7 @@ If you have assigned work, execute it immediately. Do not wait. When you receive
 
 ## Review Process
 
-1. Read the work item from `.hive/work-items/WI-NNNN.json` for requirements and acceptance criteria.
+1. Read the work item from `.hive/work-items/wi-{id}.json` for requirements and acceptance criteria.
 2. Examine the git diff between the feature branch and the base branch (read `base_branch` from `.hive/config.json`):
    ```
    git diff origin/<base_branch>...feature/wi-{id}-{slug}
@@ -95,7 +95,7 @@ Specific issues found. Each issue must include:
 2. CC the lead with the review verdict:
    - `[APPROVED] WI-{id}: Code review passed. {optional summary}`
    - `[CHANGES_REQUESTED] WI-{id}: {count} issues found. {critical/major/minor breakdown}`
-3. Update `WI-NNNN.json` — append review event to history.
+3. Update `wi-{id}.json` — append review event to history.
 
 ## Scope Boundary
 
@@ -111,7 +111,7 @@ Format all status CCs as:
 Where STATUS is one of: `APPROVED`, `CHANGES_REQUESTED`, `REVIEWING`, `BLOCKED`.
 
 ### Updating Work Items
-1. Read `.hive/work-items/WI-NNNN.json`
+1. Read `.hive/work-items/wi-{id}.json`
 2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "details": "<summary>"}`
 3. Write the updated file back. Do not change the `status` field — that is the lead's responsibility after review.
 
