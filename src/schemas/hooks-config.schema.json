@@ -9,5 +9,6 @@
       "TeammateIdle": { "type": "array" },
       "Notification": { "type": "array" }
     }}
-  }
+  },
+  "additionalProperties": false
 }

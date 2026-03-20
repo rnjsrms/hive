@@ -225,4 +225,63 @@ describe('Index schema', () => {
     const validate = ajv.compile(loadSchema('index.schema.json'));
     expect(validate({})).toBe(false);
   });
+
+  it('rejects extra fields on index entries (additionalProperties)', () => {
+    const validate = ajv.compile(loadSchema('index.schema.json'));
+    expect(validate({
+      items: [{ id: 'wi-1', status: 'open', assignee: null, extraField: 'bad' }],
+    })).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// additionalProperties enforcement across all schemas
+// ---------------------------------------------------------------------------
+
+describe('Schema strictness (additionalProperties: false)', () => {
+  it('agent-registry rejects extra fields on agent entries', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    expect(validate({
+      agents: [{
+        id: 'dev-1', role: 'developer', status: 'active',
+        current_work_item: null, rogue_field: true,
+      }],
+    })).toBe(false);
+  });
+
+  it('agent-registry rejects extra fields at top level', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    expect(validate({
+      agents: [],
+      unexpected: 'value',
+    })).toBe(false);
+  });
+
+  it('hooks-config rejects extra fields at top level', () => {
+    const validate = ajv.compile(loadSchema('hooks-config.schema.json'));
+    expect(validate({
+      hooks: { PostToolUse: [] },
+      extra: true,
+    })).toBe(false);
+  });
+
+  it('plugin-manifest rejects extra fields', () => {
+    const validate = ajv.compile(loadSchema('plugin-manifest.schema.json'));
+    expect(validate({
+      name: 'test', version: '1.0.0', description: 'test',
+      notInSchema: 'bad',
+    })).toBe(false);
+  });
+
+  it('work-item rejects extra fields', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    const valid = {
+      id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
+      status: 'open', convoy: 'convoy-1', description: 'Test',
+      acceptance_criteria: [], dependencies: [], history: [],
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+    };
+    expect(validate(valid)).toBe(true);
+    expect(validate({ ...valid, phantom: 'field' })).toBe(false);
+  });
 });

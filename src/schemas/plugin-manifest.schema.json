@@ -8,5 +8,6 @@
     "description": { "type": "string", "minLength": 1 },
     "author": { "type": "object" },
     "keywords": { "type": "array", "items": { "type": "string" } }
-  }
+  },
+  "additionalProperties": false
 }

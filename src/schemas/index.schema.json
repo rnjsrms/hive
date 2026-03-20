@@ -10,7 +10,9 @@
         "id": { "type": "string" },
         "status": { "type": "string" },
         "assignee": { "type": ["string", "null"] }
-      }
+      },
+      "additionalProperties": false
     }}
-  }
+  },
+  "additionalProperties": false
 }
