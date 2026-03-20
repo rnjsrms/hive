@@ -9,6 +9,23 @@
 
 On startup, read `.hive/convoys/_index.json`.
 
+### 1.1 State Validation
+
+Before acting on any state files, validate them:
+
+1. **Parse check**: Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`,
+   and referenced `CV-*.json` / `WI-*.json` file. If any file fails to parse:
+   - Log a warning to `activity.jsonl`: `{"event": "parse-error", "details": "..."}`
+   - Skip that entry and continue — do NOT crash the entire resume.
+2. **Referential integrity**: For each WI ID listed in a convoy's `work_items` array,
+   verify the corresponding `WI-NNNN.json` exists on disk. If missing:
+   - Log a warning and remove the dangling reference from the in-memory state.
+3. **Multiple active convoys**: If more than one convoy has `status: "in-progress"`,
+   pick the most recent by `created_at`. Warn the user about the others:
+   > "Found 2 active convoys. Resuming most recent: '[name]'. Other: '[name2]' (created [date])."
+
+### 1.2 Resume or Fresh
+
 **If any convoy has `status: "in-progress"`:**
 
 1. Use `AskUserQuestion`:
@@ -17,6 +34,9 @@ On startup, read `.hive/convoys/_index.json`.
    - Read full `.hive/` state: convoys, work-items, agents, logs.
    - `TeamCreate("hive-session")`.
    - Re-spawn agents matching the agent registry (`_index.json`).
+   - **Re-spawn timeout**: If an agent does not respond within 60 seconds of spawning,
+     mark it `dead` in the agent registry and attempt one more spawn. If the second
+     spawn also fails after 60 seconds, log the failure and notify the user.
    - Reassign every work item still in `open`, `assigned`, `in-progress`, or `review` status.
    - Resume the coordination loop (Section 5).
 3. **Fresh path:**
@@ -83,25 +103,85 @@ After the interview is complete:
 
 ## 4. Team Spawn Protocol
 
-Execute once the user approves the plan:
+Execute once the user approves the plan.
+
+> **Platform limitation (GitHub #30703):** When agents are spawned with `team_name`,
+> custom `.claude/agents/` frontmatter (`tools`, `model`, `isolation`, `color`, `skills`)
+> is **silently ignored**. To work around this, always pass spawn parameters explicitly
+> via the `Agent()` call. The `.claude/agents/*.agent.md` files remain canonical
+> behavioral documentation — they will "just work" when the platform bug is fixed.
 
 ```
 Step 1  TeamCreate("hive-session")
-Step 2  Spawn agents:
-          - N developers   (from plan's team composition)
-          - 1 reviewer     (code review, architecture checks)
-          - 1 tester       (test execution, coverage verification)
-          - 1 researcher   (optional — only if plan flags unknowns)
+
+Step 2  Spawn agents using EXPLICIT Agent() parameters (do NOT rely on frontmatter):
+
+        Developer (×N from plan):
+          Agent(
+            name:        "dev-{n}",
+            team_name:   "hive-session",
+            model:       "opus",
+            isolation:   "worktree",
+            subagent_type: "hive-developer",
+            prompt:      <full behavioral prompt from developer.agent.md body>
+          )
+
+        Reviewer (×1):
+          Agent(
+            name:        "reviewer",
+            team_name:   "hive-session",
+            model:       "opus",
+            subagent_type: "hive-reviewer",
+            prompt:      <full behavioral prompt from reviewer.agent.md body>
+          )
+          NOTE: No isolation — reviewer operates read-only on the main worktree.
+                Do NOT give the reviewer Write or Edit tools in the prompt.
+
+        Tester (×1):
+          Agent(
+            name:        "tester",
+            team_name:   "hive-session",
+            model:       "opus",
+            isolation:   "worktree",
+            subagent_type: "hive-tester",
+            prompt:      <full behavioral prompt from tester.agent.md body>
+          )
+
+        Researcher (×1, optional — only if plan flags unknowns):
+          Agent(
+            name:        "researcher",
+            team_name:   "hive-session",
+            model:       "opus",
+            subagent_type: "hive-researcher",
+            prompt:      <full behavioral prompt from researcher.agent.md body>
+          )
+          NOTE: No isolation — researcher is read-only + web tools.
+                Do NOT give the researcher Write or Edit tools in the prompt.
+
+          Spawn a researcher when ANY of these conditions apply:
+          - Unfamiliar external APIs that need documentation review
+          - No existing patterns in the codebase for the required feature
+          - Performance-sensitive algorithm choices requiring benchmarks or research
+          - External service integration (auth providers, payment, cloud APIs)
+          - The plan explicitly flags "unknowns" or "spike needed"
+
 Step 3  Create convoy file: .hive/convoys/CV-NNNN.json
         Create work-item files: .hive/work-items/WI-NNNN.json (one per item)
         Update _index.json and _sequence.json
+
 Step 4  TaskCreate for each work item (Claude Code task per WI)
+
 Step 5  SendMessage to each developer with their initial assignment(s)
-Step 6  Start health-monitoring loop (/loop 3m):
-          "Read .hive/agents/_index.json, check for stale heartbeats >5min.
-           Read last 30 lines of activity.jsonl.
-           If any agent stuck >10min, SendMessage asking status.
-           Report issues to me."
+
+Step 6  Start health-monitoring loop via CronCreate:
+
+        CronCreate("*/3 * * * *", "Health check: Read .hive/agents/_index.json
+          and check for stale heartbeats >5min. Read last 30 lines of
+          .hive/logs/activity.jsonl. If any agent stuck >10min, SendMessage
+          asking status. Also run: bash scripts/check-idle-work.sh to detect
+          unassigned open work items — if found, assign them to idle agents.
+          Report issues to me.")
+
 Step 7  Enter coordination loop (Section 5)
 ```
 
@@ -112,9 +192,41 @@ Step 7  Enter coordination loop (Section 5)
 The lead runs this loop continuously. It is event-driven: act on every
 incoming `SendMessage`.
 
+### 5.0 Message Validation & Deduplication
+
+Before processing any incoming message:
+
+1. **Malformed message check**: If a message is missing required fields (no identifiable
+   agent name, no event type, no WI reference when expected), log a warning to
+   `activity.jsonl` and skip the message. Do NOT crash or halt the loop.
+2. **Duplicate detection**: Track the last 50 processed events as `{event, wi_id, agent, ts}`.
+   If the same `event + wi_id + agent` combination arrives within 30 seconds of a
+   previous identical entry, ignore it as a duplicate and log:
+   `{"event": "duplicate-ignored", "details": "..."}`
+3. **Review/testing timeout**: If a WI has been in `review` or `testing` status for
+   more than 15 minutes with no response from the reviewer/tester, re-ping them with
+   a reminder message. Log the re-ping to `activity.jsonl`.
+
+### 5.1 Blocker Escalation Ladder
+
+When a `BLOCKED` event is received or a WI is detected as stuck:
+
+| Elapsed time | Action |
+|--------------|--------|
+| 0 min        | Log the block, analyze type (see below), route to appropriate agent |
+| 15 min       | Re-ping the blocking agent with `[PRIORITY]` flag |
+| 30 min       | Escalate to user via `AskUserQuestion`: "WI-NNNN blocked for 30 min: [reason]" |
+
+**Blocker types and routing:**
+- **Dependency blocker** (WI-X needs WI-Y): Route `[PRIORITY]` message to WI-Y's assignee
+- **Technical blocker** (missing API, env issue): Escalate to user immediately (skip ladder)
+- **Conflict blocker** (rebase/merge conflict): Route to developer with resolution guidance:
+  rebase onto latest base branch, resolve conflicts, force-push feature branch
+
 ```
 LOOP forever:
   RECEIVE message
+  VALIDATE message (Section 5.0)
 
   MATCH message.event:
 
@@ -167,6 +279,24 @@ LOOP forever:
       Log incident to activity.jsonl
 
   NEVER EXIT until convoy is "merged" or user explicitly stops.
+```
+
+### 5.2 Decision Logging
+
+When the lead makes a significant routing, assignment, scope, or technical decision
+during coordination, append an entry to `.hive/logs/decisions.jsonl`.
+
+**Triggers that require a decision log entry:**
+- **Tech choice resolution**: Choosing between competing libraries, patterns, or approaches
+- **Scope change**: Adding, removing, or modifying a work item mid-convoy
+- **Dependency substitution**: Changing WI dependency order or removing a dependency
+- **WI cancellation**: Cancelling a work item with rationale
+- **Re-assignment**: Moving a WI from one developer to another (with reason)
+- **Conflict resolution**: Resolving disagreements between reviewer and developer
+
+**Format** (see Section 7.7 for full schema):
+```json
+{"ts":"...","agent":"lead","convoy":"CV-NNNN","wi":"WI-NNNN","decision":"...","alternatives":["..."],"rationale":"..."}
 ```
 
 ---
@@ -236,7 +366,18 @@ The lead decides whether to grant the request.
 ### 6.10 Shutdown
 
 On convoy completion the lead sends a shutdown message to every agent.
-Agents must:
+
+**Shutdown sequence (lead):**
+1. Send `shutdown_request` to each agent.
+2. Wait up to **30 seconds per agent** for a `shutdown_response`.
+3. If an agent does not respond within 30 seconds, force-terminate it and log:
+   `{"event": "force-shutdown", "agent": "...", "details": "No response after 30s"}`
+4. After all agents have stopped, verify the agent registry: every agent's status
+   must show `"stopped"`. If any agent is not `"stopped"`, log a warning.
+5. List any remaining git worktrees created by agents for manual cleanup.
+6. Archive the convoy: copy `CV-NNNN.json` to `.hive/archive/`.
+
+**Agent shutdown duties:**
 1. Flush all pending log entries.
 2. Update their status in `_index.json` to `"stopped"`.
 3. Exit cleanly.
@@ -246,6 +387,87 @@ Agents must:
 ## 7. Embedded State Schemas
 
 ### 7.1 Work Item — `WI-NNNN.json`
+
+#### State Machine
+
+```
+                ┌──────────────────────────────────────────────┐
+                │                                              │
+                │  ┌──────┐    ┌──────────┐    ┌─────────────┐ │
+  ──────────►   │  │ open ├───►│ assigned ├───►│ in-progress │ │
+                │  └──┬───┘    └──────────┘    └──┬──────┬───┘ │
+                │     │                           │      │     │
+                │     │         ┌─────────────────┘      │     │
+                │     │         ▼                         │     │
+                │     │      ┌────────┐                   │     │
+                │     │      │ review │◄──────────────┐   │     │
+                │     │      └───┬────┘               │   │     │
+                │     │          │                     │   │     │
+                │     │    ┌─────┴──────┐              │   │     │
+                │     │    ▼            ▼              │   │     │
+                │     │ ┌──────────┐ ┌──────────────┐  │   │     │
+                │     │ │ APPROVED │ │ CHANGES_REQ. ├──┘   │     │
+                │     │ └────┬─────┘ └──────────────┘      │     │
+                │     │      ▼                              │     │
+                │     │ ┌──────────┐                        │     │
+                │     │ │ testing  │                        │     │
+                │     │ └────┬─────┘                        │     │
+                │     │      │                              │     │
+                │     │ ┌────┴───────┐                      │     │
+                │     │ ▼            ▼                      │     │
+                │     │ ┌────────┐ ┌──────────────┐         │     │
+                │     │ │ PASS   │ │ TESTS_FAIL   ├────────►│     │
+                │     │ └───┬────┘ └──────────────┘   (back to    │
+                │     │     ▼                        in-progress)  │
+                │     │ ┌────────────────┐                  │     │
+                │     │ │ ready-to-merge │                  │     │
+                │     │ └───────┬────────┘                  │     │
+                │     │         ▼                           │     │
+                │     │     ┌────────┐                      │     │
+                │     │     │ merged │                      │     │
+                │     │     └────────┘                      │     │
+                │     │                                     │     │
+                │     │  ┌─────────┐◄───────────────────────┘     │
+                │     │  │ blocked ├────►(back to in-progress)    │
+                │     │  └─────────┘                              │
+                │     │                                           │
+                │     └────────────►┌───────────┐                 │
+                │                   │ cancelled │ (from any state)│
+                │                   └───────────┘                 │
+                └──────────────────────────────────────────────────┘
+```
+
+Valid transitions:
+- `open` → `assigned`, `cancelled`
+- `assigned` → `in-progress`, `cancelled`
+- `in-progress` → `review`, `blocked`, `cancelled`
+- `review` → `in-progress` (changes requested), `testing` (approved), `cancelled`
+- `testing` → `ready-to-merge` (tests pass), `in-progress` (tests fail), `cancelled`
+- `ready-to-merge` → `merged`, `cancelled`
+- `blocked` → `in-progress` (unblocked), `cancelled`
+- `done` → alias for `merged` (legacy compatibility)
+
+#### Canonical History Event Types
+
+The `event` field in history entries MUST be one of these canonical values:
+
+| Event               | Emitted by | Meaning |
+|---------------------|------------|---------|
+| `created`           | lead       | Work item was created |
+| `assigned`          | lead       | Work item assigned to a developer |
+| `in-progress`       | developer  | Developer started implementation |
+| `entering-review`   | developer  | Developer submitted for review |
+| `APPROVED`          | reviewer   | Reviewer approved the change |
+| `CHANGES_REQUESTED` | reviewer   | Reviewer requested changes |
+| `TESTS_PASS`        | tester     | All tests pass, metric gates met |
+| `TESTS_FAIL`        | tester     | Tests failed or metric regression |
+| `ready-to-merge`    | lead       | All gates passed, ready for merge |
+| `merged`            | lead       | Branch merged into base branch |
+| `blocked`           | developer  | Work is blocked (details required) |
+| `unblocked`         | lead       | Blocker resolved, work can resume |
+| `cancelled`         | lead       | Work item cancelled |
+
+#### Schema
 
 ```json
 {
@@ -269,15 +491,37 @@ Agents must:
   "history": [
     { "ts": "2026-03-18T10:00:00Z", "event": "created", "agent": "lead" },
     { "ts": "2026-03-18T10:05:00Z", "event": "assigned", "agent": "lead", "details": "assigned to dev-alpha" }
-  ]
+  ],
+  "created_at": "2026-03-18T10:00:00Z",
+  "updated_at": "2026-03-18T10:05:00Z"
 }
 ```
 
-Valid `status` values: `open` | `assigned` | `in-progress` | `review` | `ready-to-merge` | `done` | `blocked` | `cancelled`
+Valid `status` values: `open` | `assigned` | `in-progress` | `review` | `testing` | `ready-to-merge` | `done` | `merged` | `blocked` | `cancelled`
 
 Valid `risk` values: `high` | `medium` | `low`
 
 ### 7.2 Convoy — `CV-NNNN.json`
+
+#### State Machine
+
+```
+  ┌────────┐     ┌─────────────┐     ┌──────────────────┐     ┌────────┐
+  │ staged ├────►│ in-progress ├────►│ agents-complete  ├────►│ merged │
+  └───┬────┘     └──────┬──────┘     └────────┬─────────┘     └────────┘
+      │                 │                     │
+      │                 ▼                     │
+      │           ┌───────────┐               │
+      └──────────►│ cancelled │◄──────────────┘
+                  └───────────┘
+```
+
+Valid transitions:
+- `staged` → `in-progress` (team spawned, work begins), `cancelled`
+- `in-progress` → `agents-complete` (all WIs ready-to-merge), `cancelled`
+- `agents-complete` → `merged` (user confirms merge), `cancelled`
+
+#### Schema
 
 ```json
 {
@@ -290,6 +534,7 @@ Valid `risk` values: `high` | `medium` | `low`
     "90% test coverage on auth module"
   ],
   "work_items": ["WI-0001", "WI-0002", "WI-0003"],
+  "agents": ["dev-alpha", "dev-beta", "reviewer", "tester"],
   "progress": {
     "total": 3,
     "done": 0,
@@ -297,7 +542,9 @@ Valid `risk` values: `high` | `medium` | `low`
     "in_progress": 1,
     "open": 1,
     "percent_complete": 33
-  }
+  },
+  "created_at": "2026-03-18T09:55:00Z",
+  "updated_at": "2026-03-18T10:12:00Z"
 }
 ```
 
@@ -313,6 +560,7 @@ Valid `status` values: `staged` | `in-progress` | `agents-complete` | `merged` |
       "role": "developer",
       "status": "active",
       "current_task": "WI-0001",
+      "convoy_id": "CV-0001",
       "last_heartbeat": "2026-03-18T10:12:00Z",
       "health": "ok"
     },
@@ -321,6 +569,7 @@ Valid `status` values: `staged` | `in-progress` | `agents-complete` | `merged` |
       "role": "reviewer",
       "status": "idle",
       "current_task": null,
+      "convoy_id": "CV-0001",
       "last_heartbeat": "2026-03-18T10:11:30Z",
       "health": "ok"
     }
@@ -328,7 +577,10 @@ Valid `status` values: `staged` | `in-progress` | `agents-complete` | `merged` |
 }
 ```
 
-Valid `health` values: `ok` | `stale` | `dead`
+Valid `health` values and thresholds:
+- `ok` — heartbeat received within the last 5 minutes
+- `stale` — heartbeat between 5 and 10 minutes old (ping the agent)
+- `dead` — heartbeat older than 10 minutes (kill and re-spawn)
 
 ### 7.4 Activity Log — `.hive/logs/activity.jsonl`
 
@@ -340,19 +592,87 @@ One JSON object per line:
 {"ts":"2026-03-18T10:55:00Z","agent":"dev-alpha","event":"entering-review","target":"WI-0001","details":"Pushed to feature/hive/dev-alpha/WI-0001, rebased on develop"}
 ```
 
-### 7.5 Communications Log — `.hive/logs/comms.jsonl`
+### 7.5 Communications Log — `.hive/logs/communications.jsonl`
 
 ```json
 {"ts":"2026-03-18T10:05:00Z","session":"hive-session","to":"dev-alpha","message":"Begin WI-0001. Branch: feature/hive/dev-alpha/WI-0001.","raw":"..."}
 {"ts":"2026-03-18T10:55:00Z","session":"hive-session","to":"lead","message":"entering-review WI-0001","raw":"..."}
 ```
 
-### 7.6 Task Ledger — `.hive/logs/tasks.jsonl`
+### 7.6 Task Ledger — `.hive/logs/task-ledger.jsonl`
 
 ```json
 {"ts":"2026-03-18T10:00:00Z","tool":"TaskCreate","input":{"title":"WI-0001","assignee":"dev-alpha"},"output":{"task_id":"t-abc123"}}
 {"ts":"2026-03-18T10:05:00Z","tool":"SendMessage","input":{"to":"dev-alpha","message":"Begin WI-0001"},"output":{"delivered":true}}
 ```
+
+### 7.7 Decision Log — `.hive/logs/decisions.jsonl`
+
+The lead logs significant architectural decisions made during coordination — tech
+choices, scope changes, dependency swaps, or trade-off resolutions. One JSON object
+per line:
+
+```json
+{"ts":"2026-03-18T10:15:00Z","agent":"lead","convoy":"CV-0001","wi":"WI-0002","decision":"Use bcrypt over argon2 — project already depends on bcrypt, avoids new native dep","alternatives":["argon2","scrypt"],"rationale":"Minimize dependency surface; bcrypt is already vetted in package-lock"}
+```
+
+### 7.8 Index File Schemas
+
+**`.hive/work-items/_index.json`** — Quick-lookup index of all work items (lead-owned):
+```json
+{
+  "items": [
+    {
+      "id": "WI-0001",
+      "title": "Implement user login endpoint",
+      "status": "in-progress",
+      "assignee": "dev-alpha",
+      "risk": "high",
+      "convoy_id": "CV-0001",
+      "branch": "feature/hive/dev-alpha/WI-0001"
+    }
+  ]
+}
+```
+
+**`.hive/convoys/_index.json`** — Quick-lookup index of all convoys (lead-owned):
+```json
+{
+  "items": [
+    {
+      "id": "CV-0001",
+      "name": "User Authentication System",
+      "status": "in-progress",
+      "work_item_count": 3,
+      "percent_complete": 33
+    }
+  ]
+}
+```
+
+**`.hive/work-items/_sequence.json`** — Next work item ID counter:
+```json
+{"next_id": 4}
+```
+
+**`.hive/convoys/_sequence.json`** — Next convoy ID counter (separate from WI counter):
+```json
+{"next_id": 2}
+```
+
+### 7.9 System Requirements
+
+- **Node.js** (v16+): All hook scripts in `scripts/` use `node -e` for JSON
+  parsing and file manipulation. Node must be available on `$PATH`.
+- **Git**: Required for branch management, auto-commit, and worktree isolation.
+- **Bash**: Hook scripts are bash scripts. On Windows, Git Bash or WSL is required.
+
+### 7.10 Hook Script Notes
+
+- **`auto-commit.sh`** uses `--no-verify` intentionally when committing `.hive/`
+  state files. This prevents pre-commit hooks (linters, formatters) from blocking
+  internal state persistence. Production code commits by developers do NOT use
+  `--no-verify`.
 
 ---
 
@@ -364,9 +684,11 @@ One JSON object per line:
     _index.json          # Agent registry (lead-owned)
   convoys/
     _index.json          # Convoy index (lead-owned)
-    _sequence.json       # Next convoy/WI id counter (lead-owned)
+    _sequence.json       # Next convoy id counter (lead-owned)
     CV-0001.json         # Individual convoy state
   work-items/
+    _index.json          # Work item index (lead-owned)
+    _sequence.json       # Next work item id counter (lead-owned)
     WI-0001.json         # Individual work item state
     WI-0002.json
   plans/
@@ -375,9 +697,140 @@ One JSON object per line:
     {topic}.md           # Research findings
   logs/
     activity.jsonl       # Heartbeats and milestones
-    comms.jsonl          # Inter-agent messages
-    tasks.jsonl          # Tool invocation ledger
+    communications.jsonl # Inter-agent messages
+    task-ledger.jsonl    # Tool invocation ledger
+    decisions.jsonl      # Lead's architectural decision records
   archive/               # Completed or abandoned convoys
+```
+
+---
+
+## 8. AutoResearch Improvement Loop
+
+An optional mode the lead activates when the user requests continuous, metric-driven
+improvement (e.g., "increase test coverage to 90%", "reduce lint violations to zero",
+"optimize API response time below 200ms").
+
+Inspired by Karpathy's autoresearch (time-boxed atomic experiments, single success
+metric, git-based rollback) and Goenka's autoresearch (8-phase loop, guard
+constraints, crash recovery, structured metrics logging).
+
+### 8.1 Activation
+
+The lead enters AutoResearch mode when the user provides:
+1. A **target metric** (e.g., "test coverage", "lint violations", "p95 latency").
+2. A **target value** (e.g., "≥ 90%", "0", "< 200ms").
+3. Optionally: a **time budget** (default 2 hours) and **max iterations** (default 20).
+
+### 8.2 The 8-Phase Loop
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  MEASURE → IDENTIFY → PROPOSE → IMPLEMENT → VALIDATE →     │
+│  DECIDE → LOG → REPEAT                                      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Phase 1: MEASURE**
+- Researcher collects baseline metrics using project tooling (test runner with
+  coverage, linter, benchmarks, etc.).
+- Results saved to `.hive/research/metrics-baseline.json`:
+  ```json
+  {
+    "ts": "2026-03-21T10:00:00Z",
+    "metrics": {
+      "test_coverage_pct": 72.3,
+      "lint_violations": 14,
+      "p95_latency_ms": 340
+    }
+  }
+  ```
+
+**Phase 2: IDENTIFY**
+- Researcher ranks top 3 improvement opportunities by impact/effort ratio.
+- For each opportunity: what to change, estimated metric delta, estimated time.
+- Results saved to `.hive/research/improvement-candidates.md`.
+
+**Phase 3: PROPOSE**
+- Lead creates ONE atomic work item for the highest-impact candidate.
+- Each iteration targets a single change — no bundling.
+- Work item includes a **time budget** (default 15 minutes).
+
+**Phase 4: IMPLEMENT**
+- Developer creates a git tag before changes: `autoresearch/pre-WI-NNNN`
+- Developer implements the change on a feature branch.
+- Standard git workflow: `feature/hive/{agent-name}/WI-{id}`
+
+**Phase 5: VALIDATE**
+- If risk ≥ medium: reviewer reviews the change first.
+- Tester runs the full test suite AND re-measures the target metric.
+- **SUCCESS criterion**: the target metric MUST improve (not just "tests pass").
+  A change that passes tests but doesn't move the metric is a failure.
+
+**Phase 6: DECIDE**
+- **Improved**: Merge the feature branch. Continue to next iteration.
+- **Unchanged or worsened**: Revert via `git revert` on the feature branch.
+  Do NOT merge. Log the failed attempt.
+- **Time budget exceeded**: Force-stop the developer, revert changes, log timeout.
+
+**Phase 7: LOG**
+- Append to `.hive/logs/autoresearch.jsonl`:
+  ```json
+  {
+    "ts": "2026-03-21T10:20:00Z",
+    "iteration": 1,
+    "wi_id": "WI-0005",
+    "metric_name": "test_coverage_pct",
+    "before": 72.3,
+    "after": 75.1,
+    "delta": 2.8,
+    "outcome": "merged",
+    "time_spent_seconds": 480
+  }
+  ```
+- Valid `outcome` values: `merged` | `reverted` | `reverted-no-improvement` | `reverted-timeout` | `reverted-regression`
+
+**Phase 8: REPEAT**
+- Re-measure the target metric (back to Phase 1).
+- Loop continues until:
+  - Target value is met → log success, exit loop.
+  - Max iterations reached → log exhaustion, report best achieved value.
+  - Wall time budget exceeded → log timeout, report best achieved value.
+  - 3 consecutive reverts → log stall, ask user for guidance.
+
+### 8.3 Guard Constraints
+
+| Guard                    | Default | Configurable? |
+|--------------------------|---------|---------------|
+| Max iterations           | 20      | Yes           |
+| Max wall time            | 2 hours | Yes           |
+| Per-iteration time budget| 15 min  | Yes           |
+| Auto-revert on test regression | Always | No     |
+| Consecutive revert stall | 3       | Yes           |
+
+### 8.4 Crash Recovery
+
+On restart, the lead checks for `.hive/logs/autoresearch.jsonl`. If it exists:
+1. Read the last entry to determine the last completed iteration.
+2. Check if the target metric has been met.
+3. If not met and within budget: resume from Phase 1 (MEASURE) of the next iteration.
+4. If met or budget exhausted: report final results and exit.
+
+### 8.5 AutoResearch Log Schema — `.hive/logs/autoresearch.jsonl`
+
+```json
+{
+  "ts": "ISO 8601",
+  "iteration": "number (1-based)",
+  "wi_id": "WI-NNNN",
+  "metric_name": "string",
+  "before": "number",
+  "after": "number",
+  "delta": "number (after - before)",
+  "outcome": "merged | reverted | reverted-no-improvement | reverted-timeout | reverted-regression",
+  "time_spent_seconds": "number",
+  "notes": "string (optional — reason for revert, etc.)"
+}
 ```
 
 ---
@@ -390,3 +843,4 @@ One JSON object per line:
 4. No agent touches protected branches. Ever.
 5. The coordination loop does not exit until the convoy reaches `"merged"` or the user explicitly terminates.
 6. When in doubt, ask the user — never guess on ambiguous requirements.
+7. In AutoResearch mode: any test regression triggers an automatic revert — no exceptions.

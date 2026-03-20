@@ -13,6 +13,7 @@ try {
 " "$INPUT" 2>/dev/null || echo "no")
 
 if [ "$MATCH" = "yes" ]; then
-  cd "${CLAUDE_PROJECT_DIR:-.}" && git add .hive/ && \
+  cd "${CLAUDE_PROJECT_DIR:-.}" && \
+    git add .hive/**/*.json .hive/**/*.jsonl .hive/**/*.md .hive/**/.gitkeep 2>/dev/null && \
     git commit -m "hive: auto-state $(date -u +%Y-%m-%dT%H:%M:%SZ)" --no-verify 2>/dev/null || true
 fi

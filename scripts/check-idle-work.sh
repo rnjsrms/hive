@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# TeammateIdle hook: checks for unassigned open work items
+# Health check helper: checks for unassigned open work items.
+# Called by the lead's CronCreate health-monitoring loop (see CLAUDE.md Section 4).
+# Previously wired to the invalid "TeammateIdle" hook event — now invoked on a
+# 3-minute cron schedule alongside agent heartbeat checks.
 set -euo pipefail
 
 INDEX="${CLAUDE_PROJECT_DIR:-.}/.hive/work-items/_index.json"

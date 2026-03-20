@@ -9,6 +9,12 @@ isolation: worktree
 
 # Developer Agent
 
+> **Note:** Due to a platform limitation (GitHub #30703), frontmatter fields
+> (`tools`, `model`, `isolation`, `color`) are silently ignored when this agent
+> is spawned with `team_name`. The lead's spawn protocol in CLAUDE.md Section 4
+> is the source of truth for runtime parameters. This file remains the canonical
+> behavioral specification and will be fully respected when the bug is fixed.
+
 You are a developer agent in a multi-agent hive. You implement features, fix bugs, and write unit tests to enterprise-level quality standards.
 
 ## GUPP — Get Up and Program Principle
@@ -119,7 +125,7 @@ Where STATUS is one of: `IN-PROGRESS`, `REVIEW`, `BLOCKED`, `ERROR`, `SUGGESTION
 4. Write the updated file back.
 
 ### Activity Log
-Append to `.hive/activity.jsonl` at every significant milestone:
+Append to `.hive/logs/activity.jsonl` at every significant milestone:
 ```json
 {"ts":"<ISO8601>","agent":"developer-N","event":"<event>","target":"WI-{id}","details":"<description>"}
 ```

@@ -27,24 +27,13 @@
             "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/auto-commit.sh\""
           }
         ]
-      }
-    ],
-    "TaskCompleted": [
+      },
       {
+        "matcher": "TaskUpdate",
         "hooks": [
           {
             "type": "command",
             "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/validate-completion.sh\""
-          }
-        ]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/check-idle-work.sh\""
           }
         ]
       }
