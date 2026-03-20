@@ -226,22 +226,17 @@ describe('validateCompletion', () => {
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs: FsOps = {
-      existsSync: (path: string) => path === '/wi/wi-1-feature.json',
+      existsSync: (path: string) => {
+        if (path === '/wi/WI-1.json') return false;
+        return path === '/wi/wi-1-feature.json';
+      },
       readdirSync: () => ['wi-1-feature.json', '_index.json'],
       readFileSync: (path: string) => {
         if (path === '/wi/wi-1-feature.json') return wi;
         throw new Error('ENOENT');
       },
     };
-    // existsSync returns false for /wi/WI-1.json, so it falls back to readdirSync
-    const fsPatched: FsOps = {
-      ...fs,
-      existsSync: (path: string) => {
-        if (path === '/wi/WI-1.json') return false;
-        return path === '/wi/wi-1-feature.json';
-      },
-    };
-    expect(validateCompletion(input, '/wi', fsPatched)).toEqual({ valid: true, errors: [] });
+    expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
   it('should skip files starting with underscore in directory scan', () => {
