@@ -114,4 +114,14 @@ describe('Agent cross-consistency', () => {
       ).not.toMatch(/catch\s*\([^)]*\)\s*\{\s*\}/);
     }
   });
+
+  it('developer and reviewer agents reference base_branch from .hive/config.json', () => {
+    const dev = readAgent('hive-developer.md');
+    const reviewer = readAgent('hive-reviewer.md');
+    // Both should mention reading base_branch from config
+    expect(dev).toContain('base_branch');
+    expect(dev).toContain('.hive/config.json');
+    expect(reviewer).toContain('base_branch');
+    expect(reviewer).toContain('.hive/config.json');
+  });
 });

@@ -246,6 +246,47 @@ describe('version consistency across all config files', () => {
 });
 
 // ---------------------------------------------------------------------------
+// .hive/config.json schema
+// ---------------------------------------------------------------------------
+
+describe('.hive/config.json schema validation', () => {
+  it('validates a correct config with base_branch', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ name: 'hive', version: '1.2.0', base_branch: 'master' })).toBe(true);
+  });
+
+  it('validates config without optional base_branch', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ name: 'hive', version: '1.2.0' })).toBe(true);
+  });
+
+  it('rejects config without required name', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ version: '1.2.0' })).toBe(false);
+  });
+
+  it('rejects config with invalid version format', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ name: 'hive', version: 'bad' })).toBe(false);
+  });
+
+  it('rejects config with extra fields', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ name: 'hive', version: '1.0.0', rogue: true })).toBe(false);
+  });
+
+  it('hive.md bootstrap config template matches config schema', () => {
+    const hiveMd = readFileSync(join(ROOT, 'plugins/hive/agents/hive.md'), 'utf-8');
+    // Extract the JSON config template from hive.md
+    const configMatch = hiveMd.match(/\{"name":\s*"hive".*?"base_branch".*?\}/);
+    expect(configMatch).not.toBeNull();
+    const configTemplate = JSON.parse(configMatch![0]);
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate(configTemplate)).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // settings.json (agent replacement config)
 // ---------------------------------------------------------------------------
 
