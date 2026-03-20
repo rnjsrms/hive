@@ -244,3 +244,94 @@ describe('version consistency across all config files', () => {
     ).toBe(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// settings.json (agent replacement config)
+// ---------------------------------------------------------------------------
+
+describe('plugin settings.json validation', () => {
+  const SETTINGS_PATH = join(ROOT, 'plugins/hive/settings.json');
+
+  it('exists and is valid JSON', () => {
+    expect(existsSync(SETTINGS_PATH)).toBe(true);
+    const settings = loadJson(SETTINGS_PATH);
+    expect(typeof settings).toBe('object');
+  });
+
+  it('specifies "agent": "hive" to replace default Claude agent', () => {
+    const settings = loadJson(SETTINGS_PATH);
+    expect(settings.agent).toBe('hive');
+  });
+
+  it('agent value matches lead agent filename (hive.md)', () => {
+    const settings = loadJson(SETTINGS_PATH);
+    const agentFile = join(ROOT, 'plugins/hive/agents', `${settings.agent}.md`);
+    expect(
+      existsSync(agentFile),
+      `Agent "${settings.agent}" specified in settings.json but ${agentFile} not found`,
+    ).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// bootstrap directory/file structure (validates hive.md Step 1 + Step 2)
+// ---------------------------------------------------------------------------
+
+describe('hive.md bootstrap structure validation', () => {
+  it('hive.md Step 1 references all required .hive/ subdirectories', () => {
+    const hiveMd = readFileSync(
+      join(ROOT, 'plugins/hive/agents/hive.md'),
+      'utf-8',
+    );
+    const requiredDirs = ['plans', 'research', 'work-items', 'convoys', 'agents', 'logs', 'archive'];
+    for (const dir of requiredDirs) {
+      expect(
+        hiveMd,
+        `Bootstrap should create .hive/${dir}`,
+      ).toContain(`.hive/${dir}`);
+    }
+  });
+
+  it('hive.md Step 2 references all required state files', () => {
+    const hiveMd = readFileSync(
+      join(ROOT, 'plugins/hive/agents/hive.md'),
+      'utf-8',
+    );
+    const requiredFiles = [
+      'config.json',
+      '_index.json',
+      '_sequence.json',
+      'activity.jsonl',
+      'communications.jsonl',
+      'task-ledger.jsonl',
+    ];
+    for (const file of requiredFiles) {
+      expect(
+        hiveMd,
+        `Bootstrap should create ${file}`,
+      ).toContain(file);
+    }
+  });
+
+  it('all scripts referenced in hooks.json exist on disk', () => {
+    // This is a cross-check: hooks.json references scripts, verify they're all real files
+    const hooks = loadJson(HOOKS_PATH);
+    const scriptNames: string[] = [];
+    for (const [, entries] of Object.entries(hooks.hooks)) {
+      for (const entry of entries as any[]) {
+        for (const h of (entry.hooks || [])) {
+          const match = (h.command || '').match(/scripts\/([^\s"]+)/);
+          if (match) scriptNames.push(match[1]);
+        }
+      }
+    }
+    // Verify we found scripts AND they all exist
+    expect(scriptNames.length).toBeGreaterThanOrEqual(5);
+    for (const name of scriptNames) {
+      expect(
+        existsSync(join(SCRIPTS_DIR, name)),
+        `Hook script ${name} not found in ${SCRIPTS_DIR}`,
+      ).toBe(true);
+    }
+  });
+});
