@@ -1,1 +1,6 @@
-{"agents": []}
+{"agents": [
+  {"id": "dev-1", "role": "developer", "status": "stopped", "current_work_item": null, "convoy_id": "convoy-1", "last_heartbeat": "2026-03-21T04:41:39Z"},
+  {"id": "dev-2", "role": "developer", "status": "stopped", "current_work_item": null, "convoy_id": "convoy-1", "last_heartbeat": "2026-03-21T04:41:41Z"},
+  {"id": "dev-3", "role": "developer", "status": "stopped", "current_work_item": null, "convoy_id": "convoy-1", "last_heartbeat": null},
+  {"id": "dev-4", "role": "developer", "status": "stopped", "current_work_item": null, "convoy_id": "convoy-1", "last_heartbeat": null}
+]}
