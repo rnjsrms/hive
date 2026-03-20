@@ -13,10 +13,10 @@
     "duration_seconds": 2.04
   },
   "current": {
-    "timestamp": "2026-03-21T03:50:00Z",
-    "test_count": 211,
+    "timestamp": "2026-03-21T04:10:00Z",
+    "test_count": 218,
     "test_files": 18,
-    "test_pass": 211,
+    "test_pass": 218,
     "test_fail": 0,
     "coverage_statements": 100,
     "coverage_branches": 100,
@@ -31,12 +31,22 @@
     {"id": 1, "action": "fix-log-communication-empty-catch-and-argv", "tests_delta": 0, "outcome": "merged"},
     {"id": 2, "action": "add-metrics-module-barrel-export", "tests_delta": 12, "outcome": "merged"},
     {"id": 3, "action": "standardize-wi-file-paths-lowercase", "tests_delta": 0, "outcome": "merged"},
-    {"id": 4, "action": "add-mirror-tests", "tests_delta": 4, "outcome": "merged"}
+    {"id": 4, "action": "add-mirror-tests", "tests_delta": 4, "outcome": "merged"},
+    {"id": 5, "action": "update-metrics-clean-branches", "tests_delta": 0, "outcome": "merged"},
+    {"id": 6, "action": "add-regression-guard-tests", "tests_delta": 4, "outcome": "merged"},
+    {"id": 7, "action": "add-state-machine-schema-alignment-tests", "tests_delta": 3, "outcome": "merged"}
   ],
   "targets": {
     "test_count_min": 195,
     "test_pass_rate": 100,
     "coverage_min": 90,
     "zero_regressions": true
+  },
+  "summary": {
+    "total_iterations": 7,
+    "total_tests_added": 23,
+    "total_fixes": 1,
+    "all_merged": true,
+    "reverts": 0
   }
 }

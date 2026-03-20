@@ -141,7 +141,7 @@ If a developer reports a merge conflict:
 
 ## Hooks
 
-Hive uses Claude Code hooks (configured in `.claude/settings.json`) to:
+Hive uses Claude Code hooks (configured in `plugins/hive/hooks/hooks.json`) to:
 
 - **Log communications** between agents to `communications.jsonl`
 - **Log task changes** (create/update) to `task-ledger.jsonl`
@@ -154,13 +154,13 @@ Hive uses Claude Code hooks (configured in `.claude/settings.json`) to:
 
 If hooks aren't firing as expected:
 
-1. **Check `.claude/settings.json`** — Verify the `hooks` key exists and matchers
+1. **Check `plugins/hive/hooks/hooks.json`** — Verify hook matchers
    are correct (`SendMessage`, `TaskCreate|TaskUpdate`, `Write|Edit`).
 2. **Test scripts manually** — Run a script with sample JSON piped to stdin:
    ```bash
-   echo '{"tool_input":{"file_path":".hive/test.json"}}' | bash scripts/auto-commit.sh
+   echo '{"tool_input":{"file_path":".hive/test.json"}}' | bash plugins/hive/scripts/auto-commit.sh
    ```
-3. **Check script permissions** — Scripts must be executable: `chmod +x scripts/*.sh`
+3. **Check script permissions** — Scripts must be executable: `chmod +x plugins/hive/scripts/*.sh`
 4. **Review stderr** — Hook scripts write errors to stderr. Check Claude Code's
    output for hook failure messages.
 5. **Node.js required** — All hook scripts use `node -e` for JSON parsing. Ensure
