@@ -7,10 +7,11 @@ mkdir -p "$LOG_DIR"
 
 INPUT=$(cat)
 
-node -e "
+echo "$INPUT" | node -e "
 const fs = require('fs');
 try {
-  const data = JSON.parse(process.argv[1]);
+  const data = JSON.parse(fs.readFileSync(0, 'utf8'));
+  const logDir = process.argv[1];
   let output = data.tool_output || '';
   // Truncate output to 2000 chars to avoid bloating the ledger
   if (typeof output === 'object') output = JSON.stringify(output);
@@ -21,6 +22,6 @@ try {
     input: data.tool_input || {},
     output: output
   };
-  fs.appendFileSync(process.argv[2] + '/task-ledger.jsonl', JSON.stringify(entry) + '\n');
-} catch (e) {}
-" "$INPUT" "$LOG_DIR" 2>/dev/null || true
+  fs.appendFileSync(logDir + '/task-ledger.jsonl', JSON.stringify(entry) + '\n');
+} catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); }
+" "$LOG_DIR" 2>/dev/null || true

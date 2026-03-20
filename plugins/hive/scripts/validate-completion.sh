@@ -5,11 +5,11 @@ set -euo pipefail
 HIVE_DIR="${CLAUDE_PROJECT_DIR:-.}/.hive"
 INPUT=$(cat)
 
-node -e "
+echo "$INPUT" | node -e "
 const fs = require('fs'), path = require('path');
 try {
-  const data = JSON.parse(process.argv[1]);
-  const wiDir = path.join(process.argv[2], 'work-items');
+  const data = JSON.parse(fs.readFileSync(0, 'utf8'));
+  const wiDir = path.join(process.argv[1], 'work-items');
   const taskInput = data.tool_input || {};
 
   // Try to extract a work item ID from metadata, subject, or description
@@ -17,9 +17,9 @@ try {
   const metadata = taskInput.metadata || {};
   let wiId = metadata.work_item_id || taskInput.work_item_id || taskInput.id || '';
 
-  // Fallback: try to extract WI ID from subject via regex
+  // Fallback: try to extract WI ID from subject via regex (case-insensitive)
   if (!wiId) {
-    const match = subject.match(/WI-\d+/);
+    const match = subject.match(/WI-\d+/i);
     if (match) wiId = match[0];
   }
 
@@ -40,17 +40,17 @@ try {
   if (!validStatuses.includes(wi.status || ''))
     errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\", \"done\", or \"merged\"');
 
-  const history = JSON.stringify(wi.history || []);
-  if (!history.includes('TESTS_PASS'))
+  const history = wi.history || [];
+  if (!history.some(h => h.action === 'TESTS_PASS'))
     errors.push('Missing tester TESTS_PASS entry in history');
-  if (wi.risk === 'high' && !history.includes('APPROVED'))
+  if (wi.risk === 'high' && !history.some(h => h.action === 'APPROVED'))
     errors.push('High-risk item missing reviewer APPROVED entry in history');
 
   if (errors.length > 0) {
     process.stderr.write(errors.join('\\n') + '\\n');
     process.exit(2);
   }
-} catch (e) { /* allow completion on parse errors */ }
-" "$INPUT" "$HIVE_DIR" 2>/dev/null
+} catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); }
+" "$HIVE_DIR" 2>/dev/null
 
 exit $?

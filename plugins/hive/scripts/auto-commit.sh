@@ -4,16 +4,17 @@ set -euo pipefail
 
 INPUT=$(cat)
 
-MATCH=$(node -e "
+MATCH=$(echo "$INPUT" | node -e "
+const fs = require('fs');
 try {
-  const data = JSON.parse(process.argv[1]);
+  const data = JSON.parse(fs.readFileSync(0, 'utf8'));
   const path = (data.tool_input || {}).file_path || '';
   console.log(path.includes('.hive/') || path.includes('.hive\\\\') ? 'yes' : 'no');
-} catch (e) { console.log('no'); }
-" "$INPUT" 2>/dev/null || echo "no")
+} catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); console.log('no'); }
+" 2>/dev/null || echo "no")
 
 if [ "$MATCH" = "yes" ]; then
   cd "${CLAUDE_PROJECT_DIR:-.}" && \
-    git add .hive/**/*.json .hive/**/*.jsonl .hive/**/*.md .hive/**/.gitkeep 2>/dev/null && \
+    git add .hive/ 2>/dev/null && \
     git commit -m "hive: auto-state $(date -u +%Y-%m-%dT%H:%M:%SZ)" --no-verify 2>/dev/null || true
 fi

@@ -11,7 +11,7 @@ try {
   const items = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')).items || [];
   const unassigned = items.filter(i => i.status === 'open' && i.assignee == null);
   console.log(unassigned.length > 0 ? 'found' : 'none');
-} catch (e) { console.log('none'); }
+} catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); console.log('none'); }
 " "$INDEX" 2>/dev/null || echo "none")
 
 if [ "$RESULT" = "found" ]; then
