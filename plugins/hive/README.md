@@ -43,8 +43,10 @@ When enabled, every `claude` session starts as the Hive lead orchestrator.
 - **Enterprise quality** — No hardcoding, security-first, performance-aware
 - **Agents challenge assumptions** — Push back on suboptimal approaches
 - **Persistent ledgers** — Communications and task state auto-logged by hooks
-- **Crash recovery** — Resume in-progress convoys on restart
+- **Crash recovery** — Resume in-progress convoys on restart (validates state integrity, handles corrupt files gracefully)
 - **Health monitoring** — `/loop 3m` detects stuck agents
+- **Blocker escalation** — Timed ladder (15m re-ping → 30m user escalation)
+- **AutoResearch mode** — Metric-driven improvement loop (measure → implement → validate → merge/revert)
 
 ## State
 
@@ -57,7 +59,8 @@ Hive bootstraps a `.hive/` directory in your project for state management:
 ├── work-items/     # Task state (JSON)
 ├── convoys/        # Work bundles
 ├── agents/         # Agent registry
-└── logs/           # Activity, communications, task ledger (JSONL)
+├── archive/        # Completed/abandoned convoys
+└── logs/           # Activity, communications, task ledger, decisions, autoresearch (JSONL)
 ```
 
 All state is git-committed automatically by hooks.

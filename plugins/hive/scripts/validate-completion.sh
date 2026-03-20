@@ -6,12 +6,23 @@ HIVE_DIR="${CLAUDE_PROJECT_DIR:-.}/.hive"
 INPUT=$(cat)
 
 node -e "
-const fs = require('fs'), path = require('path'), glob = require('path');
+const fs = require('fs'), path = require('path');
 try {
   const data = JSON.parse(process.argv[1]);
   const wiDir = path.join(process.argv[2], 'work-items');
   const taskInput = data.tool_input || {};
-  const wiId = taskInput.work_item_id || taskInput.id || '';
+
+  // Try to extract a work item ID from metadata, subject, or description
+  const subject = taskInput.subject || '';
+  const metadata = taskInput.metadata || {};
+  let wiId = metadata.work_item_id || taskInput.work_item_id || taskInput.id || '';
+
+  // Fallback: try to extract WI ID from subject via regex
+  if (!wiId) {
+    const match = subject.match(/WI-\d+/);
+    if (match) wiId = match[0];
+  }
+
   if (!wiId) process.exit(0);
 
   let wiFile = path.join(wiDir, wiId + '.json');
@@ -23,9 +34,11 @@ try {
 
   const wi = JSON.parse(fs.readFileSync(wiFile, 'utf8'));
   const errors = [];
-  const validStatuses = ['review', 'ready-to-merge', 'done', 'merged'];
+
+  // Valid WI statuses that indicate completion gates have been reached
+  const validStatuses = ['ready-to-merge', 'done', 'merged'];
   if (!validStatuses.includes(wi.status || ''))
-    errors.push('Work item status is \"' + (wi.status || '') + '\", must be at least \"review\"');
+    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\", \"done\", or \"merged\"');
 
   const history = JSON.stringify(wi.history || []);
   if (!history.includes('TESTS_PASS'))

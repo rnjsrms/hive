@@ -41,6 +41,7 @@ mkdir -p "$PROJ_DIR/.hive/work-items"
 mkdir -p "$PROJ_DIR/.hive/convoys"
 mkdir -p "$PROJ_DIR/.hive/agents"
 mkdir -p "$PROJ_DIR/.hive/logs"
+mkdir -p "$PROJ_DIR/.hive/archive"
 mkdir -p "$PROJ_DIR/scripts"
 ```
 
@@ -83,6 +84,15 @@ Create empty log files:
 touch "$PROJ_DIR/.hive/logs/activity.jsonl"
 touch "$PROJ_DIR/.hive/logs/communications.jsonl"
 touch "$PROJ_DIR/.hive/logs/task-ledger.jsonl"
+touch "$PROJ_DIR/.hive/logs/decisions.jsonl"
+touch "$PROJ_DIR/.hive/logs/autoresearch.jsonl"
+```
+
+Create `.gitkeep` files for empty directories:
+```bash
+touch "$PROJ_DIR/.hive/plans/.gitkeep"
+touch "$PROJ_DIR/.hive/research/.gitkeep"
+touch "$PROJ_DIR/.hive/archive/.gitkeep"
 ```
 
 **Step 3: Create hook scripts**
@@ -100,11 +110,14 @@ node -e "
 const fs = require('fs');
 try {
   const data = JSON.parse(process.argv[1]);
+  let message = (data.tool_input || {}).message || '';
+  if (typeof message === 'object') message = JSON.stringify(message);
+  if (message.length > 1000) message = message.substring(0, 1000) + '...[truncated]';
   const entry = {
     ts: new Date().toISOString(),
     session_id: data.session_id || '',
     to: (data.tool_input || {}).to || '',
-    message: (data.tool_input || {}).message || ''
+    message: message
   };
   fs.appendFileSync(process.argv[2] + '/communications.jsonl', JSON.stringify(entry) + '\n');
 } catch (e) {}
@@ -122,11 +135,14 @@ node -e "
 const fs = require('fs');
 try {
   const data = JSON.parse(process.argv[1]);
+  let output = data.tool_output || '';
+  if (typeof output === 'object') output = JSON.stringify(output);
+  if (output.length > 2000) output = output.substring(0, 2000) + '...[truncated]';
   const entry = {
     ts: new Date().toISOString(),
     tool: data.tool_name || '',
     input: data.tool_input || {},
-    output: data.tool_output || ''
+    output: output
   };
   fs.appendFileSync(process.argv[2] + '/task-ledger.jsonl', JSON.stringify(entry) + '\n');
 } catch (e) {}
@@ -146,7 +162,8 @@ try {
 } catch (e) { console.log('no'); }
 " "$INPUT" 2>/dev/null || echo "no")
 if [ "$MATCH" = "yes" ]; then
-  cd "${CLAUDE_PROJECT_DIR:-.}" && git add .hive/ && \
+  cd "${CLAUDE_PROJECT_DIR:-.}" && \
+    git add .hive/**/*.json .hive/**/*.jsonl .hive/**/*.md .hive/**/.gitkeep 2>/dev/null && \
     git commit -m "hive: auto-state $(date -u +%Y-%m-%dT%H:%M:%SZ)" --no-verify 2>/dev/null || true
 fi
 ```
@@ -184,7 +201,13 @@ try {
   const data = JSON.parse(process.argv[1]);
   const wiDir = path.join(process.argv[2], 'work-items');
   const taskInput = data.tool_input || {};
-  const wiId = taskInput.work_item_id || taskInput.id || '';
+  const subject = taskInput.subject || '';
+  const metadata = taskInput.metadata || {};
+  let wiId = metadata.work_item_id || taskInput.work_item_id || taskInput.id || '';
+  if (!wiId) {
+    const match = subject.match(/WI-\d+/);
+    if (match) wiId = match[0];
+  }
   if (!wiId) process.exit(0);
   let wiFile = path.join(wiDir, wiId + '.json');
   if (!fs.existsSync(wiFile)) {
@@ -194,9 +217,9 @@ try {
   }
   const wi = JSON.parse(fs.readFileSync(wiFile, 'utf8'));
   const errors = [];
-  const validStatuses = ['review', 'ready-to-merge', 'done', 'merged'];
+  const validStatuses = ['ready-to-merge', 'done', 'merged'];
   if (!validStatuses.includes(wi.status || ''))
-    errors.push('Work item status is \"' + (wi.status || '') + '\", must be at least \"review\"');
+    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\", \"done\", or \"merged\"');
   const history = JSON.stringify(wi.history || []);
   if (!history.includes('TESTS_PASS'))
     errors.push('Missing tester TESTS_PASS entry in history');
@@ -322,11 +345,16 @@ When merging, preserve any existing keys in settings.json. Only add/overwrite th
 
 ### 1C. If .hive/ already exists -- resume detection
 
+**State validation** (run before acting on any state files):
+1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `CV-*.json` / `WI-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
+2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `WI-NNNN.json` exists on disk. If missing, log a warning and remove the dangling reference.
+3. If multiple convoys have `status: "in-progress"`, pick the most recent by `created_at` and warn the user about the others.
+
 Read `.hive/convoys/_index.json`. Check for any convoy with status `in-progress`. If found:
 - Display the convoy name, creation timestamp, and count of work items
 - Ask the user: "Found in-progress convoy: {name}. Resume it, or start fresh?"
-- If resume: reload state and continue coordination loop
-- If fresh: archive old convoy (rename to `convoy-{id}-archived.json`) and proceed to interview
+- If resume: reload state, re-spawn agents (60s timeout per agent; if no response, mark `dead` and retry once), and continue coordination loop
+- If fresh: archive old convoy to `.hive/archive/` and proceed to interview
 
 ---
 
@@ -578,16 +606,34 @@ This triggers every 3 minutes. On each trigger, check:
 
 **This is the core of Hive. You run this loop until the convoy is complete. NEVER EXIT EARLY.**
 
+### Message Validation & Deduplication
+
+Before processing any incoming message:
+1. **Malformed message check**: If missing required fields (no agent name, no event type, no WI reference when expected), log a warning and skip.
+2. **Duplicate detection**: Track the last 50 events as `{event, wi_id, agent, ts}`. If same `event + wi_id + agent` arrives within 30 seconds, ignore as duplicate.
+3. **Review/testing timeout**: If a WI has been in `review` or `testing` >15 minutes with no response, re-ping the reviewer/tester.
+
+### Blocker Escalation Ladder
+
+| Elapsed | Action |
+|---------|--------|
+| 0 min   | Log block, analyze type, route to appropriate agent |
+| 15 min  | Re-ping blocking agent with `[PRIORITY]` flag |
+| 30 min  | Escalate to user via `AskUserQuestion` |
+
+Blocker types: dependency (route to WI-Y's assignee), technical (escalate to user immediately), conflict (route to developer with rebase guidance).
+
 ### State Machine for Work Items
 
 ```
-open --> in-progress --> review --> approved --> testing --> ready-to-merge --> merged
-                ^          |                       |
-                |          v                       v
-                +-- changes-requested         tests-failed
-                            |                       |
-                            v                       v
-                        in-progress             in-progress
+open → assigned → in-progress → review → testing → ready-to-merge → merged
+                      ^            |          |
+                      |            v          v
+                      +-- changes-requested  tests-failed
+                      |                          |
+                      +--- blocked (→ unblocked) +
+
+cancelled ← (from any state)
 ```
 
 ### Event Handling
@@ -666,6 +712,16 @@ Process incoming messages and state changes in this order:
 - Log every state transition to `.hive/logs/activity.jsonl`.
 - NEVER exit the loop until convoy status is `merged` or the user explicitly says to stop.
 
+### Decision Logging
+
+When the lead makes significant decisions during coordination, append to `.hive/logs/decisions.jsonl`:
+- Tech choice resolutions
+- Scope changes (adding/removing/modifying WIs mid-convoy)
+- Dependency substitutions
+- WI cancellations
+- Re-assignments (with reason)
+- Conflict resolutions between reviewer and developer
+
 ---
 
 ## Phase 6: Shared Protocol
@@ -713,6 +769,20 @@ Every agent sends a heartbeat every 5 minutes if actively working:
 - **Lead** owns: `.hive/convoys/`, `.hive/work-items/_index.json`, `.hive/work-items/_sequence.json`, `.hive/convoys/_index.json`, `.hive/convoys/_sequence.json`, `.hive/agents/_index.json`
 - **Workers** own: their individual work item JSON (status and history updates ONLY via messages to lead)
 - **Nobody** directly edits another agent's files.
+
+### Shutdown
+
+On convoy completion the lead sends a shutdown message to every agent.
+
+**Shutdown sequence (lead):**
+1. Send `shutdown_request` to each agent.
+2. Wait up to **30 seconds per agent** for a `shutdown_response`.
+3. If no response within 30 seconds, force-terminate and log.
+4. Verify all agents show `"stopped"` in the registry.
+5. List remaining git worktrees for cleanup.
+6. Archive the convoy to `.hive/archive/`.
+
+**Agent duties:** Flush log entries, update status to `"stopped"`, exit cleanly.
 
 ---
 
@@ -768,11 +838,14 @@ Every agent sends a heartbeat every 5 minutes if actively working:
       "role": "developer | reviewer | tester | researcher",
       "status": "active | idle | blocked | completed",
       "current_work_item": "wi-{number} | null",
+      "convoy_id": "convoy-{number}",
       "last_heartbeat": "ISO 8601 | null"
     }
   ]
 }
 ```
+
+Health thresholds: `ok` (<5min since heartbeat), `stale` (5-10min, ping agent), `dead` (>10min, kill and re-spawn).
 
 ### Activity Log Entry (activity.jsonl)
 ```json
@@ -847,7 +920,7 @@ When this agent is invoked, execute the following in order:
 Begin by saying:
 
 ```
-[hive:lead] Hive Orchestration System v1.0.0
+[hive:lead] Hive Orchestration System v1.2.0
 Initializing workspace...
 ```
 

@@ -11,11 +11,15 @@ node -e "
 const fs = require('fs');
 try {
   const data = JSON.parse(process.argv[1]);
+  let output = data.tool_output || '';
+  // Truncate output to 2000 chars to avoid bloating the ledger
+  if (typeof output === 'object') output = JSON.stringify(output);
+  if (output.length > 2000) output = output.substring(0, 2000) + '...[truncated]';
   const entry = {
     ts: new Date().toISOString(),
     tool: data.tool_name || '',
     input: data.tool_input || {},
-    output: data.tool_output || ''
+    output: output
   };
   fs.appendFileSync(process.argv[2] + '/task-ledger.jsonl', JSON.stringify(entry) + '\n');
 } catch (e) {}
