@@ -194,6 +194,7 @@ npm run test:integration  # Integration tests (real script execution)
 npm run test:schema       # Schema validation tests (JSON schemas + config files)
 npm run test:agents       # Agent prompt validation (frontmatter, structure, consistency)
 npm run typecheck         # TypeScript type checking (zero errors required)
+npm run ci                # All checks: typecheck + tests + coverage (use in CI pipelines)
 ```
 
 ### Test Architecture

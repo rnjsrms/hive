@@ -11,7 +11,8 @@
     "test:integration": "vitest run tests/integration",
     "test:schema": "vitest run tests/schema",
     "test:agents": "vitest run tests/agents",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ci": "npm run typecheck && npm run test:coverage"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
