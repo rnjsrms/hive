@@ -10,22 +10,39 @@
     "coverage_functions": 100,
     "coverage_lines": 100,
     "issues_fixed": 35,
+    "schemas": 7,
+    "type_errors": 70,
     "duration_seconds": 2.04
   },
-  "current": {
-    "timestamp": "2026-03-21T04:10:00Z",
-    "test_count": 218,
+  "final": {
+    "timestamp": "2026-03-21T06:07:00Z",
+    "test_count": 261,
     "test_files": 18,
-    "test_pass": 218,
+    "test_pass": 261,
     "test_fail": 0,
     "coverage_statements": 100,
     "coverage_branches": 100,
     "coverage_functions": 100,
     "coverage_lines": 100,
-    "issues_fixed": 36,
+    "issues_fixed": 38,
+    "schemas": 8,
+    "type_errors": 0,
     "empty_catches": 0,
     "wi_nnnn_refs": 0,
-    "duration_seconds": 2.1
+    "strict_schemas": 8,
+    "npm_scripts": 9,
+    "mirror_tests": 7,
+    "commits": 30,
+    "duration_seconds": 2.11
+  },
+  "deltas": {
+    "tests": "+66 (195 → 261)",
+    "test_files": "+2 (16 → 18)",
+    "issues_fixed": "+3 (35 → 38)",
+    "schemas": "+1 (7 → 8, all strict)",
+    "type_errors": "-70 (70 → 0)",
+    "empty_catches": "-1 (1 → 0)",
+    "npm_scripts": "+1 (8 → 9, added ci)"
   },
   "iterations": [
     {"id": 1, "action": "fix-log-communication-empty-catch-and-argv", "tests_delta": 0, "outcome": "merged"},
@@ -34,7 +51,20 @@
     {"id": 4, "action": "add-mirror-tests", "tests_delta": 4, "outcome": "merged"},
     {"id": 5, "action": "update-metrics-clean-branches", "tests_delta": 0, "outcome": "merged"},
     {"id": 6, "action": "add-regression-guard-tests", "tests_delta": 4, "outcome": "merged"},
-    {"id": 7, "action": "add-state-machine-schema-alignment-tests", "tests_delta": 3, "outcome": "merged"}
+    {"id": 7, "action": "add-state-machine-schema-alignment-tests", "tests_delta": 3, "outcome": "merged"},
+    {"id": 8, "action": "fix-readme-hook-references", "tests_delta": 0, "outcome": "merged"},
+    {"id": 9, "action": "add-types-node-and-typecheck-script", "tests_delta": 0, "outcome": "merged"},
+    {"id": 10, "action": "add-version-consistency-tests", "tests_delta": 2, "outcome": "merged"},
+    {"id": 11, "action": "add-settings-and-bootstrap-validation-tests", "tests_delta": 6, "outcome": "merged"},
+    {"id": 12, "action": "add-invariant-safety-contract-tests", "tests_delta": 11, "outcome": "merged"},
+    {"id": 13, "action": "add-falsy-nonstring-edge-case-tests", "tests_delta": 8, "outcome": "merged"},
+    {"id": 14, "action": "add-development-section-to-readme", "tests_delta": 0, "outcome": "merged"},
+    {"id": 15, "action": "fix-redundant-require-in-log-communication", "tests_delta": 0, "outcome": "merged"},
+    {"id": 16, "action": "add-validate-completion-mirror-tests", "tests_delta": 3, "outcome": "merged"},
+    {"id": 17, "action": "add-npm-run-ci-script", "tests_delta": 0, "outcome": "merged"},
+    {"id": 18, "action": "harden-schemas-additional-properties-false", "tests_delta": 6, "outcome": "merged"},
+    {"id": 19, "action": "add-config-schema-and-base-branch-tests", "tests_delta": 7, "outcome": "merged"},
+    {"id": 20, "action": "finalize-metrics-autoresearch-complete", "tests_delta": 0, "outcome": "merged"}
   ],
   "targets": {
     "test_count_min": 195,
@@ -43,10 +73,11 @@
     "zero_regressions": true
   },
   "summary": {
-    "total_iterations": 7,
-    "total_tests_added": 23,
-    "total_fixes": 1,
+    "total_iterations": 20,
+    "total_tests_added": 66,
+    "total_fixes": 3,
     "all_merged": true,
-    "reverts": 0
+    "reverts": 0,
+    "guard_limit_reached": true
   }
 }
