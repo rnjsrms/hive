@@ -217,3 +217,30 @@ describe('marketplace.json validation', () => {
     expect(marketplaceVersion).toBe(plugin.version);
   });
 });
+
+// ---------------------------------------------------------------------------
+// cross-file version consistency
+// ---------------------------------------------------------------------------
+
+describe('version consistency across all config files', () => {
+  it('package.json version matches plugin.json version', () => {
+    const pkg = loadJson(join(ROOT, 'package.json'));
+    const plugin = loadJson(PLUGIN_PATH);
+    expect(pkg.version).toBe(plugin.version);
+  });
+
+  it('all 3 version sources agree (package.json, plugin.json, marketplace.json)', () => {
+    const pkg = loadJson(join(ROOT, 'package.json'));
+    const plugin = loadJson(PLUGIN_PATH);
+    const marketplace = loadJson(MARKETPLACE_PATH);
+    const marketplaceVersion =
+      marketplace.metadata?.version ||
+      marketplace.plugins?.[0]?.version;
+
+    const versions = new Set([pkg.version, plugin.version, marketplaceVersion]);
+    expect(
+      versions.size,
+      `Version mismatch: package.json=${pkg.version}, plugin.json=${plugin.version}, marketplace.json=${marketplaceVersion}`,
+    ).toBe(1);
+  });
+});
