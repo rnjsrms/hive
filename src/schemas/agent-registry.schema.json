@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["agents"],
+  "properties": {
+    "agents": { "type": "array", "items": {
+      "type": "object",
+      "required": ["id", "role", "status", "current_work_item"],
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string", "enum": ["developer", "reviewer", "tester", "researcher"] },
+        "status": { "type": "string", "enum": ["active", "idle", "blocked", "completed", "stopped", "dead"] },
+        "current_work_item": { "type": ["string", "null"] },
+        "convoy_id": { "type": "string" },
+        "last_heartbeat": { "type": ["string", "null"] }
+      }
+    }}
+  }
+}

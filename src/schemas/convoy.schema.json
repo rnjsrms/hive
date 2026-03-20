@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["id", "name", "status", "plan", "created_at", "updated_at", "work_items", "agents"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^convoy-\\d+$" },
+    "name": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["planning", "in-progress", "agents-complete", "merged", "cancelled"] },
+    "plan": { "type": "string" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "work_items": { "type": "array", "items": { "type": "string" } },
+    "agents": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}
