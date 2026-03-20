@@ -114,6 +114,64 @@ describe('hooks.json validation', () => {
 });
 
 // ---------------------------------------------------------------------------
+// hive.md state machine / schema alignment
+// ---------------------------------------------------------------------------
+
+describe('state machine alignment', () => {
+  it('hive.md state machine statuses match work-item schema enum', () => {
+    const wiSchema = loadSchema('work-item.schema.json');
+    const schemaStatuses: string[] = wiSchema.properties.status.enum;
+
+    const hiveMd = readFileSync(
+      join(ROOT, 'plugins/hive/agents/hive.md'),
+      'utf-8',
+    );
+
+    // Every status in the schema should appear somewhere in hive.md
+    for (const status of schemaStatuses) {
+      expect(
+        hiveMd,
+        `Status "${status}" from schema not found in hive.md`,
+      ).toContain(status);
+    }
+  });
+
+  it('convoy schema statuses are documented in hive.md', () => {
+    const convoySchema = loadSchema('convoy.schema.json');
+    const schemaStatuses: string[] = convoySchema.properties.status.enum;
+
+    const hiveMd = readFileSync(
+      join(ROOT, 'plugins/hive/agents/hive.md'),
+      'utf-8',
+    );
+
+    for (const status of schemaStatuses) {
+      expect(
+        hiveMd,
+        `Convoy status "${status}" from schema not found in hive.md`,
+      ).toContain(status);
+    }
+  });
+
+  it('agent registry roles in schema match hive.md agent spawn section', () => {
+    const agentSchema = loadSchema('agent-registry.schema.json');
+    const roles: string[] = agentSchema.properties.agents.items.properties.role.enum;
+
+    const hiveMd = readFileSync(
+      join(ROOT, 'plugins/hive/agents/hive.md'),
+      'utf-8',
+    );
+
+    for (const role of roles) {
+      expect(
+        hiveMd,
+        `Agent role "${role}" from schema not found in hive.md`,
+      ).toContain(role);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
 // plugin.json
 // ---------------------------------------------------------------------------
 
