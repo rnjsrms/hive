@@ -115,4 +115,42 @@ describe('buildCommunicationEntry', () => {
   it('should return null for empty string', () => {
     expect(buildCommunicationEntry('')).toBeNull();
   });
+
+  // --- falsy and non-string edge cases ---
+
+  it('should stringify array message', () => {
+    const input = JSON.stringify({
+      tool_input: { message: ['item1', 'item2'] },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.message).toBe('["item1","item2"]');
+  });
+
+  it('should default numeric 0 message to empty string (falsy)', () => {
+    const input = JSON.stringify({
+      tool_input: { message: 0 },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.message).toBe('');
+  });
+
+  it('should default boolean false message to empty string (falsy)', () => {
+    const input = JSON.stringify({
+      tool_input: { message: false },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.message).toBe('');
+  });
+
+  it('should default null message to empty string (falsy)', () => {
+    const input = JSON.stringify({
+      tool_input: { message: null },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.message).toBe('');
+  });
 });

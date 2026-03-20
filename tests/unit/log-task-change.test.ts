@@ -112,4 +112,50 @@ describe('buildTaskChangeEntry', () => {
   it('should return null for empty string', () => {
     expect(buildTaskChangeEntry('')).toBeNull();
   });
+
+  // --- falsy and non-string edge cases ---
+
+  it('should stringify array output', () => {
+    const input = JSON.stringify({
+      tool_name: 'X',
+      tool_input: {},
+      tool_output: [1, 2, 3],
+    });
+    const result = buildTaskChangeEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.output).toBe('[1,2,3]');
+  });
+
+  it('should default numeric 0 output to empty string (falsy)', () => {
+    const input = JSON.stringify({
+      tool_name: 'X',
+      tool_input: {},
+      tool_output: 0,
+    });
+    const result = buildTaskChangeEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.output).toBe('');
+  });
+
+  it('should default boolean false output to empty string (falsy)', () => {
+    const input = JSON.stringify({
+      tool_name: 'X',
+      tool_input: {},
+      tool_output: false,
+    });
+    const result = buildTaskChangeEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.output).toBe('');
+  });
+
+  it('should default null output to empty string (falsy)', () => {
+    const input = JSON.stringify({
+      tool_name: 'X',
+      tool_input: {},
+      tool_output: null,
+    });
+    const result = buildTaskChangeEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.output).toBe('');
+  });
 });
