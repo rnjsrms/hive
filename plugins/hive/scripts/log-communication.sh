@@ -10,7 +10,7 @@ INPUT=$(cat)
 echo "$INPUT" | node -e "
 const fs = require('fs');
 try {
-  const data = JSON.parse(require('fs').readFileSync(0, 'utf8'));
+  const data = JSON.parse(fs.readFileSync(0, 'utf8'));
   const logDir = process.argv[1];
   let message = (data.tool_input || {}).message || '';
   // Stringify if message is a structured object (e.g., protocol messages)
