@@ -74,4 +74,44 @@ describe('Agent cross-consistency', () => {
     const leadContent = readAgent('hive.md');
     expect(leadContent).toContain('feature/wi-{id}-{slug}');
   });
+
+  it('no agent references WI-NNNN.json file paths (should be wi-{id}.json)', () => {
+    for (const file of allFiles) {
+      const content = readAgent(file);
+      expect(
+        content,
+        `${file} should not contain WI-NNNN.json references`,
+      ).not.toContain('WI-NNNN.json');
+    }
+  });
+
+  it('reviewer and researcher agents have Write tool in frontmatter', () => {
+    const reviewer = readAgent('hive-reviewer.md');
+    const researcher = readAgent('hive-researcher.md');
+    const toolsLine = (content: string) => {
+      const match = content.match(/^tools:\s*(.+)$/m);
+      return match ? match[1] : '';
+    };
+    expect(toolsLine(reviewer)).toContain('Write');
+    expect(toolsLine(researcher)).toContain('Write');
+  });
+
+  it('hive.md bootstrap config version matches plugin.json version', () => {
+    const leadContent = readAgent('hive.md');
+    const pluginJson = JSON.parse(
+      readFileSync(join(__dirname, '../../plugins/hive/.claude-plugin/plugin.json'), 'utf-8'),
+    );
+    const versionPattern = new RegExp(`"version":\\s*"${pluginJson.version.replace(/\./g, '\\.')}"`);
+    expect(leadContent).toMatch(versionPattern);
+  });
+
+  it('no empty catch blocks in any agent prompt code snippets', () => {
+    for (const file of allFiles) {
+      const content = readAgent(file);
+      expect(
+        content,
+        `${file} should not contain empty catch blocks`,
+      ).not.toMatch(/catch\s*\([^)]*\)\s*\{\s*\}/);
+    }
+  });
 });
