@@ -167,3 +167,58 @@ If hooks aren't firing as expected:
    Node.js v16+ is on `$PATH`.
 6. **Path issues on Windows** — Scripts use `${CLAUDE_PROJECT_DIR:-.}`. If this
    variable isn't set, scripts default to the current directory.
+
+## Development
+
+### Prerequisites
+
+- Node.js 16+
+- npm
+- Git
+- Bash (for integration tests; Git Bash on Windows)
+
+### Setup
+
+```bash
+cd hive
+npm install
+```
+
+### Running Tests
+
+```bash
+npm test                  # Run all tests
+npm run test:coverage     # Run with coverage report (90% threshold enforced)
+npm run test:unit         # Unit tests only (src/ module logic)
+npm run test:integration  # Integration tests (real script execution)
+npm run test:schema       # Schema validation tests (JSON schemas + config files)
+npm run test:agents       # Agent prompt validation (frontmatter, structure, consistency)
+npm run typecheck         # TypeScript type checking (zero errors required)
+```
+
+### Test Architecture
+
+| Category | Dir | Tests | What it validates |
+|----------|-----|-------|-------------------|
+| **Unit** | `tests/unit/` | ~80 | Pure function logic in `src/*.ts` modules |
+| **Integration** | `tests/integration/` | ~35 | Real bash/powershell script execution with temp dirs |
+| **Schema** | `tests/schema/` | ~25 | JSON schemas, config file validation, version consistency |
+| **Agents** | `tests/agents/` | ~50 | YAML frontmatter, markdown structure, cross-agent consistency |
+
+### Source Modules
+
+The `src/` directory contains TypeScript modules that mirror the inline JavaScript
+in `plugins/hive/scripts/*.sh`. These enable unit testing of hook logic without
+executing bash. Mirror tests in `tests/integration/module-script-mirror.test.ts`
+verify the modules stay in sync with the actual scripts.
+
+### Commit Conventions
+
+```
+feat:     New features (test infrastructure, schemas)
+fix:      Bug fixes (audit issues)
+test:     Adding/updating tests
+refactor: Code restructuring (JS extraction)
+docs:     Documentation updates
+chore:    Maintenance (gitignore, config, metrics)
+```
