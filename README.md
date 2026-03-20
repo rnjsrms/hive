@@ -46,7 +46,7 @@ All agents communicate through structured messages and share state via `.hive/` 
 
 Agents only work on feature branches, never directly on main. The typical flow:
 
-- Lead creates a feature branch for each work item (e.g., `feature/hive/dev-alpha/WI-0001`)
+- Lead creates a feature branch for each work item (e.g., `feature/wi-{id}-{slug}`)
 - Developer implements on that branch
 - Reviewer and tester validate the branch
 - Lead marks branches as ready to merge when all checks pass

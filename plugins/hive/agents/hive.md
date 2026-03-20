@@ -42,16 +42,15 @@ mkdir -p "$PROJ_DIR/.hive/convoys"
 mkdir -p "$PROJ_DIR/.hive/agents"
 mkdir -p "$PROJ_DIR/.hive/logs"
 mkdir -p "$PROJ_DIR/.hive/archive"
-mkdir -p "$PROJ_DIR/scripts"
 ```
 
 **Step 2: Create state files**
 
 Write these files using the Write tool:
 
-`.hive/config.json`:
+`.hive/config.json` (auto-detect base branch with `git rev-parse --abbrev-ref HEAD`):
 ```json
-{"name": "hive", "version": "1.0.0"}
+{"name": "hive", "version": "1.2.0", "base_branch": "master"}
 ```
 
 `.hive/work-items/_index.json`:
@@ -94,254 +93,6 @@ touch "$PROJ_DIR/.hive/plans/.gitkeep"
 touch "$PROJ_DIR/.hive/research/.gitkeep"
 touch "$PROJ_DIR/.hive/archive/.gitkeep"
 ```
-
-**Step 3: Create hook scripts**
-
-Write each of the following 6 scripts using the Write tool. The FULL content of every script is provided below -- write them EXACTLY as shown.
-
-**scripts/log-communication.sh:**
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-LOG_DIR="${CLAUDE_PROJECT_DIR:-.}/.hive/logs"
-mkdir -p "$LOG_DIR"
-INPUT=$(cat)
-node -e "
-const fs = require('fs');
-try {
-  const data = JSON.parse(process.argv[1]);
-  let message = (data.tool_input || {}).message || '';
-  if (typeof message === 'object') message = JSON.stringify(message);
-  if (message.length > 1000) message = message.substring(0, 1000) + '...[truncated]';
-  const entry = {
-    ts: new Date().toISOString(),
-    session_id: data.session_id || '',
-    to: (data.tool_input || {}).to || '',
-    message: message
-  };
-  fs.appendFileSync(process.argv[2] + '/communications.jsonl', JSON.stringify(entry) + '\n');
-} catch (e) {}
-" "$INPUT" "$LOG_DIR" 2>/dev/null || true
-```
-
-**scripts/log-task-change.sh:**
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-LOG_DIR="${CLAUDE_PROJECT_DIR:-.}/.hive/logs"
-mkdir -p "$LOG_DIR"
-INPUT=$(cat)
-node -e "
-const fs = require('fs');
-try {
-  const data = JSON.parse(process.argv[1]);
-  let output = data.tool_output || '';
-  if (typeof output === 'object') output = JSON.stringify(output);
-  if (output.length > 2000) output = output.substring(0, 2000) + '...[truncated]';
-  const entry = {
-    ts: new Date().toISOString(),
-    tool: data.tool_name || '',
-    input: data.tool_input || {},
-    output: output
-  };
-  fs.appendFileSync(process.argv[2] + '/task-ledger.jsonl', JSON.stringify(entry) + '\n');
-} catch (e) {}
-" "$INPUT" "$LOG_DIR" 2>/dev/null || true
-```
-
-**scripts/auto-commit.sh:**
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-INPUT=$(cat)
-MATCH=$(node -e "
-try {
-  const data = JSON.parse(process.argv[1]);
-  const path = (data.tool_input || {}).file_path || '';
-  console.log(path.includes('.hive/') || path.includes('.hive\\\\') ? 'yes' : 'no');
-} catch (e) { console.log('no'); }
-" "$INPUT" 2>/dev/null || echo "no")
-if [ "$MATCH" = "yes" ]; then
-  cd "${CLAUDE_PROJECT_DIR:-.}" && \
-    git add .hive/**/*.json .hive/**/*.jsonl .hive/**/*.md .hive/**/.gitkeep 2>/dev/null && \
-    git commit -m "hive: auto-state $(date -u +%Y-%m-%dT%H:%M:%SZ)" --no-verify 2>/dev/null || true
-fi
-```
-
-**scripts/check-idle-work.sh:**
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-INDEX="${CLAUDE_PROJECT_DIR:-.}/.hive/work-items/_index.json"
-[ -f "$INDEX" ] || exit 0
-RESULT=$(node -e "
-const fs = require('fs');
-try {
-  const items = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')).items || [];
-  const unassigned = items.filter(i => i.status === 'open' && i.assignee == null);
-  console.log(unassigned.length > 0 ? 'found' : 'none');
-} catch (e) { console.log('none'); }
-" "$INDEX" 2>/dev/null || echo "none")
-if [ "$RESULT" = "found" ]; then
-  echo "Unassigned work items available. Check with lead for your next task." >&2
-  exit 2
-fi
-exit 0
-```
-
-**scripts/validate-completion.sh:**
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
-HIVE_DIR="${CLAUDE_PROJECT_DIR:-.}/.hive"
-INPUT=$(cat)
-node -e "
-const fs = require('fs'), path = require('path');
-try {
-  const data = JSON.parse(process.argv[1]);
-  const wiDir = path.join(process.argv[2], 'work-items');
-  const taskInput = data.tool_input || {};
-  const subject = taskInput.subject || '';
-  const metadata = taskInput.metadata || {};
-  let wiId = metadata.work_item_id || taskInput.work_item_id || taskInput.id || '';
-  if (!wiId) {
-    const match = subject.match(/WI-\d+/);
-    if (match) wiId = match[0];
-  }
-  if (!wiId) process.exit(0);
-  let wiFile = path.join(wiDir, wiId + '.json');
-  if (!fs.existsSync(wiFile)) {
-    const files = fs.readdirSync(wiDir).filter(f => f.includes(wiId) && !f.startsWith('_'));
-    if (files.length > 0) wiFile = path.join(wiDir, files[0]);
-    else process.exit(0);
-  }
-  const wi = JSON.parse(fs.readFileSync(wiFile, 'utf8'));
-  const errors = [];
-  const validStatuses = ['ready-to-merge', 'done', 'merged'];
-  if (!validStatuses.includes(wi.status || ''))
-    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\", \"done\", or \"merged\"');
-  const history = JSON.stringify(wi.history || []);
-  if (!history.includes('TESTS_PASS'))
-    errors.push('Missing tester TESTS_PASS entry in history');
-  if (wi.risk === 'high' && !history.includes('APPROVED'))
-    errors.push('High-risk item missing reviewer APPROVED entry in history');
-  if (errors.length > 0) {
-    process.stderr.write(errors.join('\\n') + '\\n');
-    process.exit(2);
-  }
-} catch (e) {}
-" "$INPUT" "$HIVE_DIR" 2>/dev/null
-exit $?
-```
-
-**scripts/notify.ps1:**
-```powershell
-$input_text = [Console]::In.ReadToEnd()
-$title = "Hive Notification"
-$message = "A Hive event occurred"
-try {
-    $data = $input_text | ConvertFrom-Json
-    if ($data.tool_input.message) { $message = $data.tool_input.message }
-    elseif ($data.message) { $message = $data.message }
-} catch {}
-try {
-    if (Get-Module -ListAvailable -Name BurntToast) {
-        Import-Module BurntToast
-        New-BurntToastNotification -Text $title, $message
-    } else {
-        Add-Type -AssemblyName System.Windows.Forms
-        $job = Start-Job -ScriptBlock {
-            param($t, $m)
-            Add-Type -AssemblyName System.Windows.Forms
-            [System.Windows.Forms.MessageBox]::Show($m, $t, 'OK', 'Information')
-        } -ArgumentList $title, $message
-    }
-} catch {
-    Write-Host "Hive: $message"
-}
-```
-
-**Step 4: Make scripts executable**
-
-```bash
-chmod +x "$PROJ_DIR/scripts/log-communication.sh"
-chmod +x "$PROJ_DIR/scripts/log-task-change.sh"
-chmod +x "$PROJ_DIR/scripts/auto-commit.sh"
-chmod +x "$PROJ_DIR/scripts/check-idle-work.sh"
-chmod +x "$PROJ_DIR/scripts/validate-completion.sh"
-```
-
-**Step 5: Set up hooks in .claude/settings.json**
-
-Read the existing `.claude/settings.json` if it exists and MERGE with the hooks config. If the file does not exist, create it. The hooks config to merge is:
-
-```json
-{
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "SendMessage",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/log-communication.sh\""
-          }
-        ]
-      },
-      {
-        "matcher": "TaskCreate|TaskUpdate",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/log-task-change.sh\""
-          }
-        ]
-      },
-      {
-        "matcher": "Write|Edit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/auto-commit.sh\""
-          }
-        ]
-      }
-    ],
-    "TaskCompleted": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/validate-completion.sh\""
-          }
-        ]
-      }
-    ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/check-idle-work.sh\""
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -File \"$CLAUDE_PROJECT_DIR/scripts/notify.ps1\""
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-When merging, preserve any existing keys in settings.json. Only add/overwrite the `hooks` key.
 
 ### 1C. If .hive/ already exists -- resume detection
 
@@ -626,12 +377,12 @@ Blocker types: dependency (route to WI-Y's assignee), technical (escalate to use
 ### State Machine for Work Items
 
 ```
-open → assigned → in-progress → review → testing → ready-to-merge → merged
-                      ^            |          |
-                      |            v          v
-                      +-- changes-requested  tests-failed
-                      |                          |
-                      +--- blocked (→ unblocked) +
+open → assigned → in-progress → review → approved → testing → ready-to-merge → merged
+                      ^            |                    |
+                      |            v                    v
+                      +-- changes-requested        tests-failed
+                      |                                |
+                      +--- blocked (→ unblocked) ------+
 
 cancelled ← (from any state)
 ```
@@ -767,7 +518,7 @@ Every agent sends a heartbeat every 5 minutes if actively working:
 
 ### State Ownership
 - **Lead** owns: `.hive/convoys/`, `.hive/work-items/_index.json`, `.hive/work-items/_sequence.json`, `.hive/convoys/_index.json`, `.hive/convoys/_sequence.json`, `.hive/agents/_index.json`
-- **Workers** own: their individual work item JSON (status and history updates ONLY via messages to lead)
+- **Workers** own: their assigned work item JSON files — workers MAY directly update `status` and `history` fields on `wi-*.json` files they are assigned to
 - **Nobody** directly edits another agent's files.
 
 ### Shutdown
@@ -795,7 +546,7 @@ On convoy completion the lead sends a shutdown message to every agent.
   "title": "string",
   "type": "feature | bugfix | refactor | test | docs | research",
   "risk": "low | medium | high",
-  "status": "open | in-progress | review | approved | changes-requested | testing | tests-failed | ready-to-merge | blocked | merged | cancelled",
+  "status": "open | assigned | in-progress | review | approved | changes-requested | testing | tests-failed | ready-to-merge | blocked | merged | cancelled",
   "assignee": "string | null",
   "convoy": "convoy-{number}",
   "branch": "string | null",
@@ -886,7 +637,7 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 
 1. **Lead never writes production code.** The lead orchestrates, delegates, and coordinates. Writing code is for developers.
 
-2. **Workers never modify index or convoy files.** Only the lead writes to `_index.json`, `_sequence.json`, and `convoy-*.json` files. Workers communicate state changes via messages.
+2. **Workers never modify index, sequence, or convoy files.** Only the lead writes to `_index.json`, `_sequence.json`, and `convoy-*.json` files. Workers MAY directly update status and history on their assigned work item JSON file (`wi-*.json`).
 
 3. **Every state change is logged.** Every work item status transition, every review verdict, every test result, every assignment -- all logged to `.hive/logs/activity.jsonl`.
 
