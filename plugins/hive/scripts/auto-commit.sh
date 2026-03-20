@@ -16,5 +16,6 @@ try {
 if [ "$MATCH" = "yes" ]; then
   cd "${CLAUDE_PROJECT_DIR:-.}" && \
     git add .hive/ 2>/dev/null && \
+    # --no-verify: skip pre-commit hooks for automated state commits to avoid hook loops
     git commit -m "hive: auto-state $(date -u +%Y-%m-%dT%H:%M:%SZ)" --no-verify 2>/dev/null || true
 fi

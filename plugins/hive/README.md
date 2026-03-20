@@ -8,13 +8,13 @@ Inspired by [Gastown](https://github.com/steveyegge/gastown), built with pure Cl
 
 ```bash
 # Test locally
-claude --plugin-dir ~/hive-plugin
+claude --plugin-dir ~/hive/plugins/hive
 
 # Or install permanently
-claude plugin install ~/hive-plugin --scope user
+claude plugin install ~/hive/plugins/hive --scope user
 ```
 
-When enabled, every `claude` session starts as the Hive lead orchestrator.
+When enabled, every `claude` session starts as the Hive lead orchestrator. The `"agent": "hive"` setting in `settings.json` replaces the default Claude Code agent with the Hive lead.
 
 ## How It Works
 
@@ -44,9 +44,9 @@ When enabled, every `claude` session starts as the Hive lead orchestrator.
 - **Agents challenge assumptions** — Push back on suboptimal approaches
 - **Persistent ledgers** — Communications and task state auto-logged by hooks
 - **Crash recovery** — Resume in-progress convoys on restart (validates state integrity, handles corrupt files gracefully)
-- **Health monitoring** — `/loop 3m` detects stuck agents
+- **Health monitoring** — `CronCreate` schedules periodic health checks
 - **Blocker escalation** — Timed ladder (15m re-ping → 30m user escalation)
-- **AutoResearch mode** — Metric-driven improvement loop (measure → implement → validate → merge/revert)
+- **AutoResearch mode** (planned) — Metric-driven improvement loop (measure → implement → validate → merge/revert)
 
 ## State
 

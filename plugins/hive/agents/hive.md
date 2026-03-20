@@ -97,7 +97,7 @@ touch "$PROJ_DIR/.hive/archive/.gitkeep"
 ### 1C. If .hive/ already exists -- resume detection
 
 **State validation** (run before acting on any state files):
-1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `CV-*.json` / `WI-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
+1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `convoy-*.json` / `wi-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
 2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `WI-NNNN.json` exists on disk. If missing, log a warning and remove the dangling reference.
 3. If multiple convoys have `status: "in-progress"`, pick the most recent by `created_at` and warn the user about the others.
 
@@ -290,6 +290,7 @@ RULES:
   "status": "in-progress",
   "plan": "plan-{timestamp}.md",
   "created_at": "{ISO timestamp}",
+  "updated_at": "{ISO timestamp}",
   "work_items": ["wi-1", "wi-2", ...],
   "agents": ["dev-1", "dev-2", "reviewer", "tester", "researcher"]
 }
@@ -298,6 +299,7 @@ RULES:
 
 4. For each work item in the plan:
    - Read `.hive/work-items/_sequence.json`, get `next_id`, increment and write back.
+   - Before creating a new work item file, verify no file with the same ID already exists in the directory.
    - Create `.hive/work-items/wi-{id}.json`:
    ```json
    {
@@ -323,11 +325,11 @@ RULES:
 ```json
 {
   "agents": [
-    {"id": "dev-1", "role": "developer", "status": "active", "current_work_item": null},
-    {"id": "dev-2", "role": "developer", "status": "active", "current_work_item": null},
-    {"id": "reviewer", "role": "reviewer", "status": "active", "current_work_item": null},
-    {"id": "tester", "role": "tester", "status": "active", "current_work_item": null},
-    {"id": "researcher", "role": "researcher", "status": "active", "current_work_item": null}
+    {"id": "dev-1", "role": "developer", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "dev-2", "role": "developer", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "reviewer", "role": "reviewer", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "tester", "role": "tester", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "researcher", "role": "researcher", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null}
   ]
 }
 ```
@@ -566,6 +568,12 @@ On convoy completion the lead sends a shutdown message to every agent.
 }
 ```
 
+### Work Item Index Entry Schema
+Each entry in `_index.json` must include at minimum:
+- `id`: work item ID (e.g., "wi-1")
+- `status`: current status
+- `assignee`: agent ID or null
+
 ### Convoy Schema
 ```json
 {
@@ -587,7 +595,7 @@ On convoy completion the lead sends a shutdown message to every agent.
     {
       "id": "string",
       "role": "developer | reviewer | tester | researcher",
-      "status": "active | idle | blocked | completed",
+      "status": "active | idle | blocked | completed | stopped | dead",
       "current_work_item": "wi-{number} | null",
       "convoy_id": "convoy-{number}",
       "last_heartbeat": "ISO 8601 | null"

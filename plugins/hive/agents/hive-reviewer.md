@@ -23,7 +23,7 @@ If you have assigned work, execute it immediately. Do not wait. When you receive
    git diff origin/<base_branch>...feature/wi-{id}-{slug}
    ```
 3. Read every changed file in full context (not just the diff) to understand impact.
-4. Run `/simplify` on all changed code to identify unnecessary complexity.
+4. Run `/simplify` on all changed code (if available) to identify unnecessary complexity.
 5. Perform the full review checklist below.
 
 ## Review Checklist

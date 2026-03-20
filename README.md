@@ -68,7 +68,7 @@ All project state lives in `.hive/`:
 - `.hive/logs/decisions.jsonl` -- lead's architectural decision records (tech choices, scope changes, conflict resolutions)
 - `.hive/logs/autoresearch.jsonl` -- AutoResearch iteration log (metric deltas, outcomes per iteration)
 
-## AutoResearch Mode
+## AutoResearch Mode (Planned feature — not yet implemented)
 
 AutoResearch is an optional mode for continuous, metric-driven improvement. Activate it
 by giving the lead a target metric and value (e.g., "increase test coverage to 90%",
