@@ -64,3 +64,66 @@ describe('Agent markdown structure', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// hive.md invariant safety contract
+// ---------------------------------------------------------------------------
+
+describe('hive.md invariants (Phase 8 safety contract)', () => {
+  const leadContent = agentContents['hive.md'];
+
+  it('contains exactly 10 numbered invariants in Phase 8 section', () => {
+    // Extract only the Phase 8 section (between "## Phase 8: Invariants" and the next "## " or end)
+    const phase8Match = leadContent.match(/## Phase 8: Invariants[\s\S]*?(?=\n---|\n## [^#]|$)/);
+    expect(phase8Match).not.toBeNull();
+    const phase8 = phase8Match![0];
+    const invariantMatches = phase8.match(/^\d+\.\s+\*\*.+\*\*/gm);
+    expect(invariantMatches).not.toBeNull();
+    expect(invariantMatches!.length).toBe(10);
+  });
+
+  it('invariant 1: lead never writes production code', () => {
+    expect(leadContent).toContain('Lead never writes production code');
+  });
+
+  it('invariant 2: workers restricted from index/sequence/convoy files (ISS-13 updated)', () => {
+    expect(leadContent).toMatch(/Workers never modify index.*sequence.*convoy/i);
+    // ISS-13 fix: workers MAY update their own wi-*.json
+    expect(leadContent).toContain('wi-*.json');
+  });
+
+  it('invariant 3: every state change is logged', () => {
+    expect(leadContent).toContain('Every state change is logged');
+    expect(leadContent).toContain('.hive/logs/activity.jsonl');
+  });
+
+  it('invariant 4: no agent touches protected branches', () => {
+    expect(leadContent).toContain('No agent touches protected branches');
+  });
+
+  it('invariant 5: coordination loop never exits prematurely', () => {
+    expect(leadContent).toContain('coordination loop never exits prematurely');
+  });
+
+  it('invariant 6: review AND testing required before merge', () => {
+    expect(leadContent).toMatch(/review AND testing before merge/i);
+  });
+
+  it('invariant 7: dependencies are respected', () => {
+    expect(leadContent).toContain('Dependencies are respected');
+  });
+
+  it('invariant 8: communication is structured (GUPP)', () => {
+    expect(leadContent).toContain('Communication is structured');
+    expect(leadContent).toContain('GUPP');
+  });
+
+  it('invariant 9: branch naming convention enforced', () => {
+    expect(leadContent).toContain('Branches follow naming convention');
+    expect(leadContent).toContain('feature/wi-{id}-{slug}');
+  });
+
+  it('invariant 10: state files are source of truth', () => {
+    expect(leadContent).toContain('State files are the source of truth');
+  });
+});
