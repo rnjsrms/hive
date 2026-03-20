@@ -14,6 +14,7 @@ import { buildCommunicationEntry } from '../../src/log-communication.js';
 import { buildTaskChangeEntry } from '../../src/log-task-change.js';
 import { shouldAutoCommit } from '../../src/auto-commit.js';
 import { checkForIdleWork } from '../../src/check-idle-work.js';
+import { validateCompletion, type FsOps } from '../../src/validate-completion.js';
 
 const hasBash = (() => {
   try {
@@ -162,5 +163,115 @@ describeIf('module-script mirror: check-idle-work', () => {
     // exit 2 = found unassigned, exit 0 = none
     expect(runScript(withUnassigned)).toBe(2);
     expect(runScript(allAssigned)).toBe(0);
+  });
+});
+
+describeIf('module-script mirror: validate-completion', () => {
+  it('should agree: valid WI (ready-to-merge + TESTS_PASS) → module valid, script exit 0', () => {
+    const wi = JSON.stringify({
+      status: 'ready-to-merge',
+      history: [{ action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' }],
+    });
+    const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
+
+    // Module
+    const mockFs: FsOps = {
+      existsSync: () => true,
+      readdirSync: () => [],
+      readFileSync: () => wi,
+    };
+    const moduleResult = validateCompletion(input, '/wi', mockFs);
+    expect(moduleResult.valid).toBe(true);
+
+    // Script
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-mirror-'));
+    const wiDir = path.join(tmpDir, '.hive', 'work-items');
+    fs.mkdirSync(wiDir, { recursive: true });
+    fs.writeFileSync(path.join(wiDir, 'WI-1.json'), wi);
+    try {
+      execSync(`bash "${path.join(SCRIPTS_DIR, 'validate-completion.sh')}"`, {
+        input,
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+      // exit 0 = valid
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should agree: invalid WI (in-progress) → module invalid, script exit 2', () => {
+    const wi = JSON.stringify({
+      status: 'in-progress',
+      history: [{ action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' }],
+    });
+    const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
+
+    // Module
+    const mockFs: FsOps = {
+      existsSync: () => true,
+      readdirSync: () => [],
+      readFileSync: () => wi,
+    };
+    const moduleResult = validateCompletion(input, '/wi', mockFs);
+    expect(moduleResult.valid).toBe(false);
+    expect(moduleResult.errors.length).toBeGreaterThan(0);
+
+    // Script
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-mirror-'));
+    const wiDir = path.join(tmpDir, '.hive', 'work-items');
+    fs.mkdirSync(wiDir, { recursive: true });
+    fs.writeFileSync(path.join(wiDir, 'WI-1.json'), wi);
+    try {
+      execSync(`bash "${path.join(SCRIPTS_DIR, 'validate-completion.sh')}"`, {
+        input,
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+      expect.unreachable('Expected exit code 2');
+    } catch (e: any) {
+      expect(e.status).toBe(2);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should agree: missing TESTS_PASS → module invalid, script exit 2', () => {
+    const wi = JSON.stringify({
+      status: 'ready-to-merge',
+      history: [],
+    });
+    const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
+
+    // Module
+    const mockFs: FsOps = {
+      existsSync: () => true,
+      readdirSync: () => [],
+      readFileSync: () => wi,
+    };
+    const moduleResult = validateCompletion(input, '/wi', mockFs);
+    expect(moduleResult.valid).toBe(false);
+    expect(moduleResult.errors).toContain('Missing tester TESTS_PASS entry in history');
+
+    // Script
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-mirror-'));
+    const wiDir = path.join(tmpDir, '.hive', 'work-items');
+    fs.mkdirSync(wiDir, { recursive: true });
+    fs.writeFileSync(path.join(wiDir, 'WI-1.json'), wi);
+    try {
+      execSync(`bash "${path.join(SCRIPTS_DIR, 'validate-completion.sh')}"`, {
+        input,
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+      expect.unreachable('Expected exit code 2');
+    } catch (e: any) {
+      expect(e.status).toBe(2);
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });
