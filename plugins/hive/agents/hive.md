@@ -87,6 +87,11 @@ touch "$PROJ_DIR/.hive/logs/decisions.jsonl"
 touch "$PROJ_DIR/.hive/logs/autoresearch.jsonl"
 ```
 
+`.hive/metrics.json`:
+```json
+{"autoresearch_status": "idle", "autoresearch_started_at": null, "consecutive_reverts": 0}
+```
+
 Create `.gitkeep` files for empty directories:
 ```bash
 touch "$PROJ_DIR/.hive/plans/.gitkeep"
@@ -402,7 +407,7 @@ OPEN → ASSIGNED → IN-PROGRESS → REVIEW → APPROVED → TESTING → READY-
                        |            v                    v
                        +-- CHANGES-REQUESTED        TESTS-FAILED
                        |                                |
-                       +--------- BLOCKED --------------+
+                       +--- BLOCKED (→ IN-PROGRESS) ----+
 
 CANCELLED ← (from any state)
 ```
