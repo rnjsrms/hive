@@ -418,7 +418,7 @@ Process incoming messages and state changes in this order:
 **When a developer sends "REVIEW" / status is "REVIEW":**
 1. Update work item status to `REVIEW` in `.hive/work-items/wi-{id}.json`.
 2. Update work item `updated_at` timestamp.
-3. Append to work item `history`: `{"action": "SUBMITTED-FOR-REVIEW", "agent": "dev-{n}", "ts": "{ISO}", "notes": ""}`
+3. Append to work item `history`: `{"action": "SUBMITTED_FOR_REVIEW", "agent": "dev-{n}", "ts": "{ISO}", "notes": ""}`
 4. `SendMessage` to `[hive:reviewer]`: "Please review WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
 5. Log to `.hive/logs/activity.jsonl`.
 

@@ -91,7 +91,7 @@ Write to `.hive/research/{topic}.md` with the following structure:
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
-2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "researcher", "action": "RESEARCH-COMPLETE", "notes": "<summary>"}`
+2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "researcher", "action": "RESEARCH_COMPLETE", "notes": "<summary>"}`
 3. Write the updated file back.
 
 ### Activity Log
