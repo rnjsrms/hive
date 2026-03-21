@@ -15,3 +15,4 @@ export {
   type ValidationResult,
 } from './validate-completion.js';
 export { buildActivityEntry, type ActivityEntry } from './log-activity.js';
+export { isValidTransition, type WorkItemStatus } from './state-machine.js';
