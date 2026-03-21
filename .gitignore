@@ -3,16 +3,5 @@ dist/
 coverage/
 *.tsbuildinfo
 
-# Hive runtime state — generated per session/convoy, not source code
-.hive/logs/*.jsonl
-.hive/work-items/wi-*.json
-.hive/work-items/_index.json
-.hive/work-items/_sequence.json
-.hive/convoys/convoy-*.json
-.hive/convoys/_index.json
-.hive/convoys/_sequence.json
-.hive/agents/_index.json
-.hive/config.json
-.hive/metrics.json
-.hive/plans/*.md
-.hive/research/*.md
+# Hive runtime state — bootstrapped per project, not source code
+.hive/
