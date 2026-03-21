@@ -68,6 +68,72 @@ describe('computeDelta', () => {
     expect(stdinDelta?.improved).toBe(true);
     expect(stdinDelta?.delta).toBe(2);
   });
+
+  it('should detect function coverage decrease as regression', () => {
+    const before = makeMetrics();
+    const after = makeMetrics({ coverage: { statements: 100, branches: 100, functions: 80, lines: 100 } });
+    const deltas = computeDelta(before, after);
+    const funcDelta = deltas.find(d => d.metric === 'coverage.functions');
+    expect(funcDelta?.improved).toBe(false);
+    expect(funcDelta?.delta).toBe(-20);
+  });
+
+  it('should detect line coverage decrease as regression', () => {
+    const before = makeMetrics();
+    const after = makeMetrics({ coverage: { statements: 100, branches: 100, functions: 100, lines: 85 } });
+    const deltas = computeDelta(before, after);
+    const linesDelta = deltas.find(d => d.metric === 'coverage.lines');
+    expect(linesDelta?.improved).toBe(false);
+    expect(linesDelta?.delta).toBe(-15);
+  });
+
+  it('should detect hardcoded strings decrease as improvement (lower is better)', () => {
+    const before = makeMetrics({ quality: { emptyCatches: 0, todos: 0, hardcodedStrings: 5, scriptModuleAlignment: 5 } });
+    const after = makeMetrics({ quality: { emptyCatches: 0, todos: 0, hardcodedStrings: 2, scriptModuleAlignment: 5 } });
+    const deltas = computeDelta(before, after);
+    const hsDelta = deltas.find(d => d.metric === 'quality.hardcodedStrings');
+    expect(hsDelta?.improved).toBe(true);
+    expect(hsDelta?.delta).toBe(-3);
+  });
+
+  it('should detect hardcoded strings increase as regression', () => {
+    const before = makeMetrics({ quality: { emptyCatches: 0, todos: 0, hardcodedStrings: 1, scriptModuleAlignment: 5 } });
+    const after = makeMetrics({ quality: { emptyCatches: 0, todos: 0, hardcodedStrings: 4, scriptModuleAlignment: 5 } });
+    const deltas = computeDelta(before, after);
+    const hsDelta = deltas.find(d => d.metric === 'quality.hardcodedStrings');
+    expect(hsDelta?.improved).toBe(false);
+    expect(hsDelta?.delta).toBe(3);
+  });
+
+  it('should detect script-module alignment increase as improvement', () => {
+    const before = makeMetrics({ quality: { emptyCatches: 0, todos: 0, hardcodedStrings: 0, scriptModuleAlignment: 3 } });
+    const after = makeMetrics({ quality: { emptyCatches: 0, todos: 0, hardcodedStrings: 0, scriptModuleAlignment: 5 } });
+    const deltas = computeDelta(before, after);
+    const smaDelta = deltas.find(d => d.metric === 'quality.scriptModuleAlignment');
+    expect(smaDelta?.improved).toBe(true);
+    expect(smaDelta?.delta).toBe(2);
+  });
+
+  it('should include all 13 HiveMetrics fields in delta output', () => {
+    const m = makeMetrics();
+    const deltas = computeDelta(m, m);
+    const metricNames = deltas.map(d => d.metric).sort();
+    expect(metricNames).toEqual([
+      'coverage.branches',
+      'coverage.functions',
+      'coverage.lines',
+      'coverage.statements',
+      'quality.emptyCatches',
+      'quality.hardcodedStrings',
+      'quality.scriptModuleAlignment',
+      'quality.todos',
+      'scripts.withErrorLogging',
+      'scripts.withStdinInput',
+      'tests.failed',
+      'tests.passed',
+      'tests.total',
+    ]);
+  });
 });
 
 describe('hasRegression', () => {
