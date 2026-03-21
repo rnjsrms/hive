@@ -113,7 +113,7 @@ Append to `.hive/logs/activity.jsonl` for each test action:
 ```json
 {"ts":"<ISO8601>","agent":"tester","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `TEST-START`, `TEST-WRITE`, `SUITE-RUN`, `TESTS-PASS`, `TESTS-FAIL`, `READY-TO-MERGE`.
+Events: `TEST_START`, `TEST_WRITE`, `SUITE_RUN`, `TESTS_PASS`, `TESTS_FAIL`, `READY_TO_MERGE`.
 
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility. You report readiness — you do not merge.

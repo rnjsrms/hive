@@ -99,7 +99,7 @@ Append to `.hive/logs/activity.jsonl` for each research action:
 ```json
 {"ts":"<ISO8601>","agent":"researcher","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `RESEARCH-START`, `CODEBASE-SCAN`, `RESEARCH-COMPLETE`, `QUESTION-ANSWERED`.
+Events: `RESEARCH_START`, `CODEBASE_SCAN`, `RESEARCH_COMPLETE`, `QUESTION_ANSWERED`.
 
 ### Gitflow Reminder
 You do NOT write application code or commit to any branch. You produce research documents in `.hive/research/`. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`.

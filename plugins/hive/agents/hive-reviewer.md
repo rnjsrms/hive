@@ -123,7 +123,7 @@ Append to `.hive/logs/activity.jsonl` for each review action:
 ```json
 {"ts":"<ISO8601>","agent":"reviewer","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `REVIEW-START`, `REVIEW-APPROVED`, `REVIEW-CHANGES-REQUESTED`, `SIMPLIFY-RUN`.
+Events: `REVIEW_START`, `REVIEW_APPROVED`, `REVIEW_CHANGES_REQUESTED`, `SIMPLIFY_RUN`.
 
 ### Gitflow Reminder
 You NEVER commit, merge, or modify production code on any branch. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. You only read and analyze code. You MAY write to work item JSON files for history updates.

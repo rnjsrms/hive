@@ -409,7 +409,7 @@ CANCELLED ← (from any state)
 
 > **Note:** `BLOCKED` transitions back to `IN-PROGRESS` when the blocker is resolved.
 > There is no separate "unblocked" status — the resolution is recorded as a
-> `BLOCK-RESOLVED` history action and the WI returns to `IN-PROGRESS`.
+> `BLOCK_RESOLVED` history action and the WI returns to `IN-PROGRESS`.
 
 ### Event Handling
 
@@ -439,7 +439,7 @@ Process incoming messages and state changes in this order:
 
 **When tester sends "TESTS-FAIL":**
 1. Update work item status to `TESTS-FAILED`.
-2. Append to history: `{"action": "TESTS-FAIL", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
+2. Append to history: `{"action": "TESTS_FAIL", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
 3. `SendMessage` to the original developer: "Tests failed on WI-{id}. Details: {details}. Please fix and resubmit for review."
 4. Update work item status to `IN-PROGRESS`.
 
@@ -451,9 +451,9 @@ Process incoming messages and state changes in this order:
    - Assign the blocked developer a different work item.
    - Ask the user for guidance if the block is external.
 
-**When a blocker is resolved (BLOCK-RESOLVED):**
+**When a blocker is resolved (BLOCK_RESOLVED):**
 1. Update work item status to `IN-PROGRESS`.
-2. Append to history: `{"action": "BLOCK-RESOLVED", "agent": "lead", "ts": "{ISO}", "notes": "{resolution}"}`
+2. Append to history: `{"action": "BLOCK_RESOLVED", "agent": "lead", "ts": "{ISO}", "notes": "{resolution}"}`
 3. `SendMessage` to the assigned developer: "WI-{id} unblocked. Reason: {resolution}. Please resume work."
 4. Update `.hive/work-items/wi-{id}.json`.
 
@@ -636,7 +636,7 @@ Health thresholds: `OK` (<5min since heartbeat), `STALE` (5-10min, ping agent), 
 {
   "ts": "ISO 8601",
   "agent": "string",
-  "event": "string",
+  "action": "string",
   "work_item": "wi-{number} | null",
   "details": "string"
 }

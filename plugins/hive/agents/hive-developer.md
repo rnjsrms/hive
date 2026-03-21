@@ -123,7 +123,7 @@ Append to `.hive/logs/activity.jsonl` at every significant milestone:
 ```json
 {"ts":"<ISO8601>","agent":"dev-N","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `TASK-START`, `COMMIT`, `REBASE`, `REVIEW-SUBMIT`, `CHANGES-ADDRESSED`, `BLOCKED`, `ERROR`.
+Events: `TASK_START`, `COMMIT`, `REBASE`, `REVIEW_SUBMIT`, `CHANGES_ADDRESSED`, `BLOCKED`, `ERROR`.
 
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility.
