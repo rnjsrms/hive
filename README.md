@@ -221,10 +221,10 @@ npm run ci                # All checks: typecheck + tests + coverage (use in CI 
 
 | Category | Dir | Tests | What it validates |
 |----------|-----|-------|-------------------|
-| **Unit** | `tests/unit/` | ~80 | Pure function logic in `src/*.ts` modules |
+| **Unit** | `tests/unit/` | ~100 | Pure function logic in `src/*.ts` modules |
 | **Integration** | `tests/integration/` | ~35 | Real bash/powershell script execution with temp dirs |
-| **Schema** | `tests/schema/` | ~25 | JSON schemas, config file validation, version consistency |
-| **Agents** | `tests/agents/` | ~50 | YAML frontmatter, markdown structure, cross-agent consistency |
+| **Schema** | `tests/schema/` | ~65 | JSON schemas, config file validation, version consistency |
+| **Agents** | `tests/agents/` | ~75 | YAML frontmatter, markdown structure, cross-agent consistency |
 
 ### Source Modules
 
