@@ -68,19 +68,39 @@ All project state lives in `.hive/`:
 - `.hive/logs/decisions.jsonl` -- lead's architectural decision records (tech choices, scope changes, conflict resolutions)
 - `.hive/logs/autoresearch.jsonl` -- AutoResearch iteration log (metric deltas, outcomes per iteration)
 
-## AutoResearch Mode (Planned feature — not yet implemented)
+## AutoResearch Mode
 
-AutoResearch is an optional mode for continuous, metric-driven improvement. Activate it
-by giving the lead a target metric and value (e.g., "increase test coverage to 90%",
-"reduce lint violations to zero").
+AutoResearch is a continuous, metric-driven improvement loop. Activate it by giving the
+lead a target metric and value (e.g., "increase test coverage to 90%", "reduce lint
+violations to zero").
 
-The system runs an 8-phase loop: MEASURE → IDENTIFY → PROPOSE → IMPLEMENT → VALIDATE →
-DECIDE → LOG → REPEAT. Each iteration targets a single atomic change. Changes that don't
+The system runs a 7-phase loop: MEASURE → IDENTIFY → PROPOSE → IMPLEMENT → VALIDATE →
+LOG → MERGE/REVERT. Each iteration targets a single atomic change. Changes that don't
 improve the metric are automatically reverted. Progress is logged to
 `.hive/logs/autoresearch.jsonl`.
 
-Guard constraints prevent runaway loops: max 20 iterations, 2-hour wall time, 15-minute
-per-iteration budget, and auto-stop after 3 consecutive reverts.
+### Concurrency protection
+
+Before starting an iteration, the lead checks `.hive/metrics.json` for
+`autoresearch_status`. If the value is `"running"`, the cycle is skipped to prevent
+overlapping iterations (git conflicts, race conditions on state files). The field is set
+to `"running"` at iteration start and `"idle"` at iteration end (or on error/revert).
+
+```json
+{
+  "autoresearch_status": "running",
+  "autoresearch_iteration": 5,
+  "autoresearch_started_at": "2026-03-21T05:00:00Z"
+}
+```
+
+If `autoresearch_status` is `"running"` but `autoresearch_started_at` is older than
+15 minutes, the iteration is assumed crashed and the status is reset to `"idle"`.
+
+### Guard constraints
+
+- 15-minute per-iteration budget (stale lock auto-cleared)
+- Auto-stop after 3 consecutive reverts
 
 ## Resuming After a Crash
 

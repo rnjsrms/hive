@@ -46,7 +46,7 @@ When enabled, every `claude` session starts as the Hive lead orchestrator. The `
 - **Crash recovery** — Resume in-progress convoys on restart (validates state integrity, handles corrupt files gracefully)
 - **Health monitoring** — `CronCreate` schedules periodic health checks
 - **Blocker escalation** — Timed ladder (15m re-ping → 30m user escalation)
-- **AutoResearch mode** (planned) — Metric-driven improvement loop (measure → implement → validate → merge/revert)
+- **AutoResearch mode** — Metric-driven improvement loop with concurrency protection (measure → implement → validate → merge/revert)
 
 ## State
 

@@ -50,7 +50,7 @@ Write these files using the Write tool:
 
 `.hive/config.json` (auto-detect base branch with `git rev-parse --abbrev-ref HEAD`):
 ```json
-{"name": "hive", "version": "1.2.0", "base_branch": "master"}
+{"name": "hive", "version": "1.3.0", "base_branch": "master"}
 ```
 
 `.hive/work-items/_index.json`:
