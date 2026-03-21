@@ -36,9 +36,9 @@ try {
   const errors = [];
 
   // Valid WI statuses that indicate completion gates have been reached
-  const validStatuses = ['ready-to-merge', 'done', 'merged'];
+  const validStatuses = ['ready-to-merge', 'merged'];
   if (!validStatuses.includes(wi.status || ''))
-    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\", \"done\", or \"merged\"');
+    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\" or \"merged\"');
 
   const history = wi.history || [];
   if (!history.some(h => h.action === 'TESTS_PASS'))

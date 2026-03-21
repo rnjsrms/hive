@@ -81,7 +81,7 @@ describe('validateCompletion', () => {
   }
 
   const validWi = JSON.stringify({
-    status: 'done',
+    status: 'ready-to-merge',
     history: [{ action: 'TESTS_PASS' }],
   });
 
@@ -137,7 +137,7 @@ describe('validateCompletion', () => {
     const result = validateCompletion(input, '/wi', fs);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
-      'Work item status is "in-progress", must be "ready-to-merge", "done", or "merged"'
+      'Work item status is "in-progress", must be "ready-to-merge" or "merged"'
     );
   });
 
@@ -152,7 +152,7 @@ describe('validateCompletion', () => {
 
   it('should report error for missing TESTS_PASS', () => {
     const wi = JSON.stringify({
-      status: 'done',
+      status: 'ready-to-merge',
       history: [{ action: 'REVIEWED' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
@@ -163,7 +163,7 @@ describe('validateCompletion', () => {
   });
 
   it('should report error for missing TESTS_PASS with empty history', () => {
-    const wi = JSON.stringify({ status: 'done', history: [] });
+    const wi = JSON.stringify({ status: 'ready-to-merge', history: [] });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     const result = validateCompletion(input, '/wi', fs);
@@ -173,7 +173,7 @@ describe('validateCompletion', () => {
 
   it('should report error for high-risk item missing APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'done',
+      status: 'ready-to-merge',
       risk: 'high',
       history: [{ action: 'TESTS_PASS' }],
     });
@@ -186,7 +186,7 @@ describe('validateCompletion', () => {
 
   it('should pass for high-risk item with APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'done',
+      status: 'ready-to-merge',
       risk: 'high',
       history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
     });
@@ -197,7 +197,7 @@ describe('validateCompletion', () => {
 
   it('should not require APPROVED for non-high-risk items', () => {
     const wi = JSON.stringify({
-      status: 'done',
+      status: 'ready-to-merge',
       risk: 'low',
       history: [{ action: 'TESTS_PASS' }],
     });
@@ -221,7 +221,7 @@ describe('validateCompletion', () => {
 
   it('should find work item file by case-insensitive match in directory', () => {
     const wi = JSON.stringify({
-      status: 'done',
+      status: 'ready-to-merge',
       history: [{ action: 'TESTS_PASS' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
@@ -266,7 +266,7 @@ describe('validateCompletion', () => {
   });
 
   it('should handle missing history key', () => {
-    const wi = JSON.stringify({ status: 'done' });
+    const wi = JSON.stringify({ status: 'ready-to-merge' });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     const result = validateCompletion(input, '/wi', fs);
