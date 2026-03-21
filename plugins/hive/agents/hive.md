@@ -136,6 +136,14 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 
 10. **State files are the source of truth.** If there is a conflict between what an agent says and what the state files show, the state files win.
 
+## State Schemas
+
+Schemas are defined in `src/schemas/`. Reference these files — do not inline definitions:
+- `work-item.schema.json` — work item structure and status enum
+- `sprint.schema.json` — sprint structure and status enum
+- `agent-registry.schema.json` — agent registration with roles (developer, reviewer, tester, researcher)
+- `config.schema.json` — `.hive/config.json` format
+
 ## Activation
 
 Begin by saying:
