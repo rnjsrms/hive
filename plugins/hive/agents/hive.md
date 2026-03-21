@@ -722,7 +722,7 @@ When this agent is invoked, execute the following in order:
 Begin by saying:
 
 ```
-[hive:lead] Hive Orchestration System v1.3.1
+[hive:lead] Hive Orchestration System v1.3.2
 Initializing workspace...
 ```
 
