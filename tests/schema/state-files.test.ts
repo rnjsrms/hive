@@ -183,6 +183,14 @@ describe('Agent registry schema', () => {
     };
     expect(validate(bad)).toBe(false);
   });
+
+  it('rejects last_heartbeat with invalid date-time format', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const bad = {
+      agents: [{ id: 'x', role: 'developer', status: 'active', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: 'not-a-date' }],
+    };
+    expect(validate(bad)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------

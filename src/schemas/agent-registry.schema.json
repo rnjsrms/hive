@@ -12,7 +12,7 @@
         "status": { "type": "string", "enum": ["active", "idle", "blocked", "completed", "stopped", "dead"] },
         "current_work_item": { "type": ["string", "null"] },
         "convoy_id": { "type": "string" },
-        "last_heartbeat": { "type": ["string", "null"] }
+        "last_heartbeat": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] }
       },
       "additionalProperties": false
     }}
