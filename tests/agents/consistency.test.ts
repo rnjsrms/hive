@@ -115,6 +115,21 @@ describe('Agent cross-consistency', () => {
     }
   });
 
+  it('hive.md activation banner version matches plugin.json version', () => {
+    const leadContent = readAgent('hive.md');
+    const pluginJson = JSON.parse(
+      readFileSync(join(__dirname, '../../plugins/hive/.claude-plugin/plugin.json'), 'utf-8'),
+    );
+    // Banner format: [hive:lead] Hive Orchestration System v1.3.0
+    const bannerPattern = new RegExp(
+      `Hive Orchestration System v${pluginJson.version.replace(/\./g, '\\.')}`,
+    );
+    expect(
+      leadContent,
+      `hive.md banner version should match plugin.json version ${pluginJson.version}`,
+    ).toMatch(bannerPattern);
+  });
+
   it('developer and reviewer agents reference base_branch from .hive/config.json', () => {
     const dev = readAgent('hive-developer.md');
     const reviewer = readAgent('hive-reviewer.md');
