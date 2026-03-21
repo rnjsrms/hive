@@ -14,13 +14,15 @@ describe('buildCommunicationEntry', () => {
   it('should build entry from valid input with string message', () => {
     const input = JSON.stringify({
       session_id: 'sess-1',
-      tool_input: { to: 'team-lead', message: 'hello' },
+      tool_input: { to: 'team-lead', message: 'hello', summary: 'greeting' },
     });
     const result = buildCommunicationEntry(input);
     expect(result).toEqual({
       ts: '2026-03-21T12:00:00.000Z',
       session_id: 'sess-1',
+      from: '',
       to: 'team-lead',
+      summary: 'greeting',
       message: 'hello',
     });
   });
@@ -35,40 +37,83 @@ describe('buildCommunicationEntry', () => {
     expect(result!.message).toBe('{"type":"status","ok":true}');
   });
 
-  it('should truncate messages longer than 1000 characters', () => {
-    const longMsg = 'x'.repeat(1500);
+  it('should not truncate long messages', () => {
+    const longMsg = 'x'.repeat(5000);
     const input = JSON.stringify({
       session_id: 'sess-3',
       tool_input: { to: 'dev-2', message: longMsg },
     });
     const result = buildCommunicationEntry(input);
     expect(result).not.toBeNull();
-    expect(result!.message).toHaveLength(1000 + '...[truncated]'.length);
-    expect(result!.message.endsWith('...[truncated]')).toBe(true);
-  });
-
-  it('should not truncate messages exactly 1000 characters', () => {
-    const exactMsg = 'a'.repeat(1000);
-    const input = JSON.stringify({
-      session_id: 'sess-4',
-      tool_input: { to: 'dev-1', message: exactMsg },
-    });
-    const result = buildCommunicationEntry(input);
-    expect(result).not.toBeNull();
-    expect(result!.message).toHaveLength(1000);
+    expect(result!.message).toHaveLength(5000);
     expect(result!.message).not.toContain('...[truncated]');
   });
 
-  it('should truncate messages of 1001 characters', () => {
-    const msg = 'b'.repeat(1001);
+  // --- from field tests ---
+
+  it('should parse from field from [hive:xxx] tag in message', () => {
     const input = JSON.stringify({
-      session_id: 'sess-5',
-      tool_input: { to: 'dev-1', message: msg },
+      session_id: 'sess-f1',
+      tool_input: { to: 'team-lead', message: '[hive:dev-1] task complete' },
     });
     const result = buildCommunicationEntry(input);
     expect(result).not.toBeNull();
-    expect(result!.message.endsWith('...[truncated]')).toBe(true);
+    expect(result!.from).toBe('dev-1');
   });
+
+  it('should parse from field with lead identity', () => {
+    const input = JSON.stringify({
+      session_id: 'sess-f2',
+      tool_input: { to: 'dev-1', message: '[hive:lead] please work on WI-5' },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.from).toBe('lead');
+  });
+
+  it('should default from to empty string when no hive tag', () => {
+    const input = JSON.stringify({
+      session_id: 'sess-f3',
+      tool_input: { to: 'dev-1', message: 'no tag here' },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.from).toBe('');
+  });
+
+  it('should default from to empty string for object messages', () => {
+    const input = JSON.stringify({
+      session_id: 'sess-f4',
+      tool_input: { to: 'dev-1', message: { type: 'shutdown_request' } },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.from).toBe('');
+  });
+
+  // --- summary field tests ---
+
+  it('should capture summary from tool_input', () => {
+    const input = JSON.stringify({
+      session_id: 'sess-s1',
+      tool_input: { to: 'dev-1', message: 'hello', summary: 'Quick greeting' },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.summary).toBe('Quick greeting');
+  });
+
+  it('should default summary to empty string when missing', () => {
+    const input = JSON.stringify({
+      session_id: 'sess-s2',
+      tool_input: { to: 'dev-1', message: 'hello' },
+    });
+    const result = buildCommunicationEntry(input);
+    expect(result).not.toBeNull();
+    expect(result!.summary).toBe('');
+  });
+
+  // --- default/edge cases ---
 
   it('should default session_id to empty string when missing', () => {
     const input = JSON.stringify({ tool_input: { to: 'x', message: 'hi' } });
@@ -97,6 +142,8 @@ describe('buildCommunicationEntry', () => {
     expect(result).not.toBeNull();
     expect(result!.to).toBe('');
     expect(result!.message).toBe('');
+    expect(result!.from).toBe('');
+    expect(result!.summary).toBe('');
   });
 
   it('should handle empty object input', () => {
@@ -106,6 +153,8 @@ describe('buildCommunicationEntry', () => {
     expect(result!.session_id).toBe('');
     expect(result!.to).toBe('');
     expect(result!.message).toBe('');
+    expect(result!.from).toBe('');
+    expect(result!.summary).toBe('');
   });
 
   it('should return null for invalid JSON', () => {
