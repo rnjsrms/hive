@@ -34,4 +34,4 @@ try {
   };
   fs.appendFileSync(logDir + '/activity.jsonl', JSON.stringify(entry) + '\n');
 } catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); }
-" "${CLAUDE_PROJECT_DIR:-.}" "$LOG_DIR" 2>/dev/null || true
+" "${CLAUDE_PROJECT_DIR:-.}" "$LOG_DIR" 2>/dev/null || { echo "log-activity: hook failed" >&2; exit 0; }

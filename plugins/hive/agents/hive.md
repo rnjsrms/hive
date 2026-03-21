@@ -59,8 +59,9 @@ Write these files using the Write tool:
 ```bash
 BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "master")
 ```
+Write the config file with the resolved value of `$BASE_BRANCH` (do NOT write the literal string `"$BASE_BRANCH"`):
 ```json
-{"name": "hive", "version": "1.3.3", "base_branch": "$BASE_BRANCH"}
+{"name": "hive", "version": "1.3.3", "base_branch": "<resolved value, e.g. main or master>"}
 ```
 
 `.hive/work-items/_index.json`:

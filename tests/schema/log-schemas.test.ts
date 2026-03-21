@@ -36,7 +36,8 @@ describe('activity-log.schema.json', () => {
       agent: 'dev-1',
       action: 'STATUS_CHANGE',
       work_item: 'wi-3',
-      details: 'Changed status to IN-PROGRESS',
+      status: 'IN_PROGRESS',
+      notes: 'Changed status to IN_PROGRESS',
     })).toBe(true);
   });
 

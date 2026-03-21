@@ -9,7 +9,7 @@ export interface ActivityEntry {
   notes: string;
 }
 
-export function buildActivityEntry(inputJson: string, readFile: (path: string) => string = fs.readFileSync as any): ActivityEntry | null {
+export function buildActivityEntry(inputJson: string, readFile: (filePath: string) => string = (p) => fs.readFileSync(p, 'utf8')): ActivityEntry | null {
   try {
     const data = JSON.parse(inputJson);
     const filePath = (data.tool_input || {}).file_path || '';
