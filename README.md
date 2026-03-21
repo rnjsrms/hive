@@ -59,11 +59,11 @@ Agents only work on feature branches, never directly on main. The typical flow:
 All project state lives in `.hive/`:
 
 - `.hive/work-items/_index.json` -- list of all work items and their status
-- `.hive/convoys/_index.json` -- active execution groups
+- `.hive/sprints/_index.json` -- active execution groups
 - `.hive/agents/_index.json` -- registered agents and their roles
 - `.hive/plans/` -- planning documents
 - `.hive/research/` -- research findings from the researcher agent (topic-based markdown files)
-- `.hive/archive/` -- archived (completed or abandoned) convoys
+- `.hive/archive/` -- archived (completed or abandoned) sprints
 - `.hive/logs/activity.jsonl` -- work item state changes (hook-driven via `log-activity.sh`)
 - `.hive/logs/communications.jsonl` -- inter-agent messages with `from`, `to`, `summary` (hook-driven via `log-communication.sh`)
 - `.hive/logs/task-ledger.jsonl` -- task creation and update log (hook-driven via `log-task-change.sh`)
@@ -77,9 +77,9 @@ cd hive
 claude
 ```
 
-The lead agent detects in-progress convoys and work items by reading `.hive/` state
+The lead agent detects in-progress sprints and work items by reading `.hive/` state
 files. It validates file integrity (skipping corrupt entries rather than crashing),
-handles multiple active convoys by picking the most recent, and resumes where it left
+handles multiple active sprints by picking the most recent, and resumes where it left
 off -- reassigning stalled work items and continuing the active plan.
 
 ## Ready-to-Merge Branches
@@ -109,13 +109,13 @@ If a work item appears stuck (no progress for >10 minutes):
    and re-spawns dead ones. You can also ask the lead directly: "What's the status of WI-NNNN?"
 3. If an agent is truly stuck, the lead will re-assign the work item to another developer.
 
-### Cancelling a Convoy
+### Cancelling a Sprint
 
-Ask the lead: "Cancel the current convoy." It will:
+Ask the lead: "Cancel the current sprint." It will:
 1. Set all open/in-progress work items to `cancelled`.
-2. Set the convoy status to `cancelled`.
+2. Set the sprint status to `cancelled`.
 3. Shut down all agents.
-4. Archive the convoy to `.hive/archive/`.
+4. Archive the sprint to `.hive/archive/`.
 
 ### Handling Merge Conflicts
 

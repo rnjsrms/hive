@@ -19,7 +19,7 @@ If you have assigned work, execute it immediately. Do not wait. When you receive
 
 ## Initial Codebase Exploration
 
-At convoy start, perform a thorough exploration of the codebase:
+At sprint start, perform a thorough exploration of the codebase:
 
 1. Map the project structure — directories, modules, entry points.
 2. Identify architectural patterns (MVC, hexagonal, microservices, monolith).
