@@ -353,6 +353,24 @@ This triggers every 3 minutes. On each trigger, check:
 - Are any work items stuck (no update for >10 minutes)?
 - Are there unassigned work items that could be picked up?
 
+### 4F. AutoResearch concurrency protocol
+
+When running AutoResearch (metric-driven improvement loop), the lead MUST follow this
+protocol to prevent overlapping iterations:
+
+1. **Before starting**: Read `.hive/metrics.json`. If `autoresearch_status` is `"running"`,
+   skip this iteration. If `autoresearch_status` is `"running"` but `autoresearch_started_at`
+   is older than 15 minutes, assume a crash — reset status to `"idle"` and proceed.
+
+2. **On iteration start**: Set `autoresearch_status` to `"running"` and
+   `autoresearch_started_at` to the current ISO timestamp.
+
+3. **On iteration end** (merge or revert): Set `autoresearch_status` to `"idle"`.
+
+4. **On error**: Set `autoresearch_status` to `"idle"` before exiting.
+
+Additional guard: auto-stop after 3 consecutive reverts (no improvement found).
+
 ---
 
 ## Phase 5: Coordination Loop
