@@ -229,18 +229,19 @@ describe('version consistency across all config files', () => {
     expect(pkg.version).toBe(plugin.version);
   });
 
-  it('all 3 version sources agree (package.json, plugin.json, marketplace.json)', () => {
+  it('all 4 version sources agree (package.json, package-lock.json, plugin.json, marketplace.json)', () => {
     const pkg = loadJson(join(ROOT, 'package.json'));
+    const pkgLock = loadJson(join(ROOT, 'package-lock.json'));
     const plugin = loadJson(PLUGIN_PATH);
     const marketplace = loadJson(MARKETPLACE_PATH);
     const marketplaceVersion =
       marketplace.metadata?.version ||
       marketplace.plugins?.[0]?.version;
 
-    const versions = new Set([pkg.version, plugin.version, marketplaceVersion]);
+    const versions = new Set([pkg.version, pkgLock.version, plugin.version, marketplaceVersion]);
     expect(
       versions.size,
-      `Version mismatch: package.json=${pkg.version}, plugin.json=${plugin.version}, marketplace.json=${marketplaceVersion}`,
+      `Version mismatch: package.json=${pkg.version}, package-lock.json=${pkgLock.version}, plugin.json=${plugin.version}, marketplace.json=${marketplaceVersion}`,
     ).toBe(1);
   });
 });
