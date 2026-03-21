@@ -42,3 +42,4 @@ export {
   type ValidationResult as BootstrapValidationResult,
   type ValidationWarning,
 } from './bootstrap.js';
+export { validateTransition, type TransitionResult } from './validate-transition.js';
