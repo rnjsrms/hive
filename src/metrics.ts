@@ -58,8 +58,12 @@ export function computeDelta(before: HiveMetrics, after: HiveMetrics): MetricsDe
   compare('tests.failed', before.tests.failed, after.tests.failed, false);
   compare('coverage.statements', before.coverage.statements, after.coverage.statements);
   compare('coverage.branches', before.coverage.branches, after.coverage.branches);
+  compare('coverage.functions', before.coverage.functions, after.coverage.functions);
+  compare('coverage.lines', before.coverage.lines, after.coverage.lines);
   compare('quality.emptyCatches', before.quality.emptyCatches, after.quality.emptyCatches, false);
   compare('quality.todos', before.quality.todos, after.quality.todos, false);
+  compare('quality.hardcodedStrings', before.quality.hardcodedStrings, after.quality.hardcodedStrings, false);
+  compare('quality.scriptModuleAlignment', before.quality.scriptModuleAlignment, after.quality.scriptModuleAlignment);
   compare('scripts.withStdinInput', before.scripts.withStdinInput, after.scripts.withStdinInput);
   compare('scripts.withErrorLogging', before.scripts.withErrorLogging, after.scripts.withErrorLogging);
 
