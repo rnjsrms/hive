@@ -19,11 +19,14 @@ export { isValidTransition, VALID_TRANSITIONS, type WorkItemStatus } from './sta
 export {
   createSprint,
   createWorkItem,
+  getNextId,
+  incrementSequence,
   type FsOps as SprintFactoryFsOps,
-  type SprintInput,
-  type WorkItemInput,
-  type Sprint,
-  type WorkItem,
+  type SequenceData,
+  type SprintConfig,
+  type SprintData,
+  type WorkItemConfig,
+  type WorkItemData,
 } from './sprint-factory.js';
 export {
   initializeHive,

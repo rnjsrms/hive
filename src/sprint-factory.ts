@@ -15,13 +15,17 @@ export interface FsOps {
   existsSync(path: string): boolean;
 }
 
-export interface SprintInput {
+export interface SequenceData {
+  next_id: number;
+}
+
+export interface SprintConfig {
   name: string;
   plan: string;
   agents?: string[];
 }
 
-export interface WorkItemInput {
+export interface WorkItemConfig {
   title: string;
   type: 'feature' | 'bugfix' | 'refactor' | 'test' | 'docs' | 'research';
   risk: 'low' | 'medium' | 'high';
@@ -31,7 +35,7 @@ export interface WorkItemInput {
   dependencies?: string[];
 }
 
-export interface Sprint {
+export interface SprintData {
   id: string;
   name: string;
   status: 'PLANNING' | 'IN_PROGRESS' | 'AGENTS_COMPLETE' | 'MERGED' | 'CANCELLED';
@@ -42,7 +46,7 @@ export interface Sprint {
   agents: string[];
 }
 
-export interface WorkItem {
+export interface WorkItemData {
   id: string;
   title: string;
   type: string;
@@ -60,7 +64,19 @@ export interface WorkItem {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Sequence helpers
+// ---------------------------------------------------------------------------
+
+export function getNextId(sequenceFile: SequenceData): number {
+  return sequenceFile.next_id;
+}
+
+export function incrementSequence(sequenceFile: SequenceData): SequenceData {
+  return { next_id: sequenceFile.next_id + 1 };
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers
 // ---------------------------------------------------------------------------
 
 function readJson<T>(fs: FsOps, path: string): T {
@@ -72,9 +88,9 @@ function writeJson(fs: FsOps, path: string, data: unknown): void {
 }
 
 function allocateId(fs: FsOps, seqPath: string): number {
-  const seq = readJson<{ next_id: number }>(fs, seqPath);
-  const id = seq.next_id;
-  writeJson(fs, seqPath, { next_id: id + 1 });
+  const seq = readJson<SequenceData>(fs, seqPath);
+  const id = getNextId(seq);
+  writeJson(fs, seqPath, incrementSequence(seq));
   return id;
 }
 
@@ -83,10 +99,10 @@ function allocateId(fs: FsOps, seqPath: string): number {
 // ---------------------------------------------------------------------------
 
 export function createSprint(
-  input: SprintInput,
+  config: SprintConfig,
   hiveDir: string,
   fs: FsOps,
-): Sprint {
+): SprintData {
   const sprintsDir = `${hiveDir}/sprints`;
   const seqPath = `${sprintsDir}/_sequence.json`;
   const indexPath = `${sprintsDir}/_index.json`;
@@ -101,15 +117,15 @@ export function createSprint(
   }
 
   const now = new Date().toISOString();
-  const sprint: Sprint = {
+  const sprint: SprintData = {
     id,
-    name: input.name,
-    status: 'PLANNING',
-    plan: input.plan,
+    name: config.name,
+    status: 'IN_PROGRESS',
+    plan: config.plan,
     created_at: now,
     updated_at: now,
     work_items: [],
-    agents: input.agents ?? [],
+    agents: config.agents ?? [],
   };
 
   writeJson(fs, filePath, sprint);
@@ -127,10 +143,10 @@ export function createSprint(
 // ---------------------------------------------------------------------------
 
 export function createWorkItem(
-  input: WorkItemInput,
+  config: WorkItemConfig,
   hiveDir: string,
   fs: FsOps,
-): WorkItem {
+): WorkItemData {
   const wiDir = `${hiveDir}/work-items`;
   const seqPath = `${wiDir}/_sequence.json`;
   const indexPath = `${wiDir}/_index.json`;
@@ -145,18 +161,18 @@ export function createWorkItem(
   }
 
   const now = new Date().toISOString();
-  const wi: WorkItem = {
+  const wi: WorkItemData = {
     id,
-    title: input.title,
-    type: input.type,
-    risk: input.risk,
+    title: config.title,
+    type: config.type,
+    risk: config.risk,
     status: 'OPEN',
     assignee: null,
-    sprint: input.sprint,
+    sprint: config.sprint,
     branch: null,
-    description: input.description,
-    acceptance_criteria: input.acceptance_criteria,
-    dependencies: input.dependencies ?? [],
+    description: config.description,
+    acceptance_criteria: config.acceptance_criteria,
+    dependencies: config.dependencies ?? [],
     history: [],
     created_at: now,
     updated_at: now,
