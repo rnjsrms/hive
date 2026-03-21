@@ -284,4 +284,33 @@ describe('Schema strictness (additionalProperties: false)', () => {
     expect(validate(valid)).toBe(true);
     expect(validate({ ...valid, phantom: 'field' })).toBe(false);
   });
+
+  it('work-item history entry accepts valid fields (action, agent, ts, notes)', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    const wi = {
+      id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
+      status: 'open', convoy: 'convoy-1', description: 'Test',
+      acceptance_criteria: [], dependencies: [],
+      history: [
+        { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
+        { action: 'APPROVED', agent: 'reviewer', ts: '2026-01-01T01:00:00Z', notes: 'LGTM' },
+      ],
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+    };
+    expect(validate(wi)).toBe(true);
+  });
+
+  it('work-item history entry rejects extra fields (additionalProperties)', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    const wi = {
+      id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
+      status: 'open', convoy: 'convoy-1', description: 'Test',
+      acceptance_criteria: [], dependencies: [],
+      history: [
+        { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z', rogue_field: 'bad' },
+      ],
+      created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
+    };
+    expect(validate(wi)).toBe(false);
+  });
 });
