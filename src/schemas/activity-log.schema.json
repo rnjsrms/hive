@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["ts", "agent", "event"],
+  "required": ["ts", "agent", "action"],
   "properties": {
     "ts": { "type": "string", "format": "date-time" },
     "agent": { "type": "string", "minLength": 1 },
-    "event": { "type": "string", "minLength": 1 },
+    "action": { "type": "string", "minLength": 1 },
     "work_item": { "oneOf": [{ "type": "string", "pattern": "^wi-\\d+$" }, { "type": "null" }] },
     "details": { "type": "string" }
   },
