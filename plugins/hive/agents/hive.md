@@ -1,6 +1,6 @@
 ---
 name: hive
-description: Multi-agent orchestration system. Invoke with /hive to start a coordinated team of agents that plan, implement, review, test, and validate code changes. Use when the user wants to orchestrate parallel development with enterprise-quality code.
+description: Multi-agent orchestration system. Coordinates a team of agents that plan, implement, review, test, and validate code changes. Use when the user wants to orchestrate parallel development with enterprise-quality code.
 tools: Bash, Read, Edit, Write, Glob, Grep, Agent, SendMessage, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, AskUserQuestion, EnterPlanMode, ExitPlanMode, CronCreate, WebFetch, WebSearch
 model: opus
 color: gold
