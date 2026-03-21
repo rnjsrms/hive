@@ -137,8 +137,8 @@ describe('Convoy schema', () => {
 describe('Agent registry schema', () => {
   const validRegistry = {
     agents: [
-      { id: 'dev-1', role: 'developer', status: 'active', current_work_item: 'wi-1' },
-      { id: 'reviewer', role: 'reviewer', status: 'idle', current_work_item: null },
+      { id: 'dev-1', role: 'developer', status: 'active', current_work_item: 'wi-1', convoy_id: 'convoy-1', last_heartbeat: null },
+      { id: 'reviewer', role: 'reviewer', status: 'idle', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: '2026-01-01T00:00:00Z' },
     ],
   };
 
@@ -155,7 +155,7 @@ describe('Agent registry schema', () => {
   it('rejects invalid role', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'manager', status: 'active', current_work_item: null }],
+      agents: [{ id: 'x', role: 'manager', status: 'active', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: null }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -163,7 +163,23 @@ describe('Agent registry schema', () => {
   it('rejects invalid status', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'running', current_work_item: null }],
+      agents: [{ id: 'x', role: 'developer', status: 'running', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: null }],
+    };
+    expect(validate(bad)).toBe(false);
+  });
+
+  it('rejects agent entry missing convoy_id', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const bad = {
+      agents: [{ id: 'x', role: 'developer', status: 'active', current_work_item: null, last_heartbeat: null }],
+    };
+    expect(validate(bad)).toBe(false);
+  });
+
+  it('rejects agent entry missing last_heartbeat', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const bad = {
+      agents: [{ id: 'x', role: 'developer', status: 'active', current_work_item: null, convoy_id: 'convoy-1' }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -244,7 +260,8 @@ describe('Schema strictness (additionalProperties: false)', () => {
     expect(validate({
       agents: [{
         id: 'dev-1', role: 'developer', status: 'active',
-        current_work_item: null, rogue_field: true,
+        current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: null,
+        rogue_field: true,
       }],
     })).toBe(false);
   });

@@ -5,7 +5,7 @@
   "properties": {
     "agents": { "type": "array", "items": {
       "type": "object",
-      "required": ["id", "role", "status", "current_work_item"],
+      "required": ["id", "role", "status", "current_work_item", "convoy_id", "last_heartbeat"],
       "properties": {
         "id": { "type": "string" },
         "role": { "type": "string", "enum": ["developer", "reviewer", "tester", "researcher"] },
