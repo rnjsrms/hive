@@ -154,15 +154,23 @@ Ask follow-up questions until you have enough clarity to create a plan.
 
 ---
 
-## Phase 3: Plan Creation
+## Phase 3: Iterative Plan Creation
 
-### 3A. Enter plan mode
+Planning uses a **Plan agent** and a **Reviewer agent** orchestrated by the Lead. The Lead never writes the plan directly and never lets agents talk to the user.
 
-Use the `EnterPlanMode` tool to enter planning mode. This signals that you are drafting, not executing.
+### 3A. Spawn Plan agent
 
-### 3B. Draft the plan
+Spawn a Plan agent using the Agent tool with `subagent_type: Plan`:
 
-Write a comprehensive plan to `.hive/plans/plan-{timestamp}.md` with this structure:
+```
+Agent(subagent_type: Plan)
+```
+
+Send the Plan agent the full interview context (user answers, scope, constraints, acceptance criteria) via SendMessage.
+
+### 3B. Plan agent drafts the plan
+
+The Plan agent writes a comprehensive plan to `.hive/plans/plan-{timestamp}.md` with this structure:
 
 ```markdown
 # Hive Plan: {title}
@@ -203,14 +211,51 @@ Write a comprehensive plan to `.hive/plans/plan-{timestamp}.md` with this struct
 {How each work item will be tested}
 ```
 
-### 3C. Exit plan mode and get approval
+The Plan agent messages the Lead when the draft is ready.
 
-Use `ExitPlanMode` to leave planning mode. Present the plan summary to the user. Ask:
-- "Approve this plan?"
-- "Any changes needed?"
-- "Ready to spawn the team?"
+### 3C. Spawn Reviewer agent
 
-Do NOT proceed until the user explicitly approves.
+Spawn a Reviewer agent to review the plan:
+
+```
+Agent(subagent_type: Reviewer)
+```
+
+Send the Reviewer the path to the plan file via SendMessage. The Reviewer reads the plan and provides structured feedback:
+- Scope gaps or ambiguities
+- Missing acceptance criteria
+- Risk concerns
+- Dependency ordering issues
+- Suggestions for improvement
+
+The Reviewer responds with **APPROVED** or **CHANGES_REQUESTED** plus specific feedback.
+
+### 3D. Iterate until approved
+
+If the Reviewer sends **CHANGES_REQUESTED**:
+1. The Lead routes the Reviewer's feedback to the Plan agent via SendMessage.
+2. The Plan agent revises the plan file in place.
+3. The Plan agent messages the Lead when revisions are complete.
+4. The Lead sends the updated plan back to the Reviewer for re-review.
+5. Repeat until the Reviewer sends **APPROVED**.
+
+If the Lead determines that user input is needed to resolve a Reviewer concern (e.g., ambiguous scope, conflicting requirements), the Lead — and **ONLY** the Lead — uses `AskUserQuestion` to ask the user. No other agent communicates with the user. The Lead then relays the user's answer to the Plan agent.
+
+### 3E. User sign-off
+
+Once the Reviewer approves:
+1. The Lead presents the final plan summary to the user via `AskUserQuestion`.
+2. Ask: "Approve this plan? Any changes needed? Ready to spawn the team?"
+3. If the user requests changes, the Lead sends them to the Plan agent and re-triggers review (back to 3D).
+4. Do NOT proceed until the user explicitly approves.
+
+### Roles summary
+
+| Role | Responsibilities | Talks to user? |
+|------|-----------------|----------------|
+| **Lead** | Orchestrates, routes messages, asks user when needed | YES (only agent that does) |
+| **Plan agent** | Writes and revises the plan file | NO |
+| **Reviewer** | Reviews plan, approves or requests changes | NO |
 
 ---
 
