@@ -47,9 +47,9 @@ export function validateCompletion(
     const wi = JSON.parse(fs.readFileSync(wiFile, 'utf8'));
     const errors: string[] = [];
 
-    const validStatuses = ['ready-to-merge', 'merged'];
+    const validStatuses = ['READY_TO_MERGE', 'MERGED'];
     if (!validStatuses.includes(wi.status || ''))
-      errors.push(`Work item status is "${wi.status || ''}", must be "ready-to-merge" or "merged"`);
+      errors.push(`Work item status is "${wi.status || ''}", must be "READY_TO_MERGE" or "MERGED"`);
 
     const history: Array<{ action?: string }> = wi.history || [];
     if (!history.some((h) => h.action === 'TESTS_PASS'))

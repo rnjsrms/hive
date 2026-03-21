@@ -72,7 +72,7 @@ Do NOT limit yourself to finding defects. Actively propose improvements:
 
 ## Enterprise Quality Gates
 
-Reject (CHANGES-REQUESTED) code that has ANY of the following:
+Reject (CHANGES_REQUESTED) code that has ANY of the following:
 - Hardcoded configuration values
 - Duplicated logic that should be extracted
 - Missing error handling on I/O or external calls
@@ -85,7 +85,7 @@ Reject (CHANGES-REQUESTED) code that has ANY of the following:
 ### APPROVED
 The code meets all quality gates. May include optional improvement suggestions prefixed with `[OPTIONAL]`.
 
-### CHANGES-REQUESTED
+### CHANGES_REQUESTED
 Specific issues found. Each issue must include:
 - File path and line number: `{file}:{line}`
 - Severity: `[CRITICAL]`, `[MAJOR]`, `[MINOR]`
@@ -97,7 +97,7 @@ Specific issues found. Each issue must include:
 1. Send structured feedback to the developer via SendMessage.
 2. CC the lead with the review verdict:
    - `[APPROVED] WI-{id}: Code review passed. {optional summary}`
-   - `[CHANGES-REQUESTED] WI-{id}: {count} issues found. {critical/major/minor breakdown}`
+   - `[CHANGES_REQUESTED] WI-{id}: {count} issues found. {critical/major/minor breakdown}`
 3. Update `wi-{id}.json` — append review event to history.
 
 ## Scope Boundary
@@ -111,14 +111,14 @@ Format all status CCs as:
 ```
 [STATUS] WI-{id}: {message}
 ```
-Where STATUS is one of: `APPROVED`, `CHANGES-REQUESTED`, `REVIEWING`, `BLOCKED`.
+Where STATUS is one of: `APPROVED`, `CHANGES_REQUESTED`, `REVIEWING`, `BLOCKED`.
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
 2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "notes": "<summary>"}`
 3. Update the `status` field based on your verdict:
    - On **APPROVED** verdict: set `status` to `APPROVED`
-   - On **CHANGES-REQUESTED** verdict: set `status` to `CHANGES-REQUESTED`
+   - On **CHANGES_REQUESTED** verdict: set `status` to `CHANGES_REQUESTED`
 4. Write the updated file back.
 
 ### Gitflow Reminder

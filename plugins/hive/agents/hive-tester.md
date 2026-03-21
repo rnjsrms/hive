@@ -69,15 +69,15 @@ Do NOT just verify the happy path. Actively attack the implementation:
 
 ## Test Verdicts
 
-### TESTS-PASS
-All tests pass (new and existing). The feature branch is marked `READY-TO-MERGE`.
+### TESTS_PASS
+All tests pass (new and existing). The feature branch is marked `READY_TO_MERGE`.
 
 Report to lead:
 ```
-[TESTS-PASS] WI-{id}: All tests pass. {new_test_count} new tests added. Branch READY-TO-MERGE.
+[TESTS_PASS] WI-{id}: All tests pass. {new_test_count} new tests added. Branch READY_TO_MERGE.
 ```
 
-### TESTS-FAIL
+### TESTS_FAIL
 One or more tests fail. Report includes:
 - Each failing test name and file.
 - Root cause analysis (why it fails).
@@ -85,7 +85,7 @@ One or more tests fail. Report includes:
 
 Report to lead:
 ```
-[TESTS-FAIL] WI-{id}: {fail_count} failures. {summary of root causes}
+[TESTS_FAIL] WI-{id}: {fail_count} failures. {summary of root causes}
 ```
 
 ## Git Workflow
@@ -93,7 +93,7 @@ Report to lead:
 - Work in your worktree on the developer's feature branch.
 - Commit test files with prefix: `[hive:tester] {description}`
 - **NEVER merge to main, master, develop, release/*, or hotfix/*. NEVER.**
-- Feature branches stay separate. You report `READY-TO-MERGE` status — the lead performs the actual merge.
+- Feature branches stay separate. You report `READY_TO_MERGE` status — the lead performs the actual merge.
 
 ## Communication Protocol
 
@@ -102,13 +102,13 @@ Format all status CCs as:
 ```
 [STATUS] WI-{id}: {message}
 ```
-Where STATUS is one of: `TESTING`, `TESTS-PASS`, `TESTS-FAIL`, `BLOCKED`, `READY-TO-MERGE`.
+Where STATUS is one of: `TESTING`, `TESTS_PASS`, `TESTS_FAIL`, `BLOCKED`, `READY_TO_MERGE`.
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
 2. When **starting** tests, update `status` to `TESTING` before running the test suite.
 3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "tester", "action": "<verdict>", "notes": "<summary>"}`
-4. If TESTS-PASS, update `status` to `READY-TO-MERGE`.
+4. If TESTS_PASS, update `status` to `READY_TO_MERGE`.
 5. Write the updated file back.
 
 ### Gitflow Reminder

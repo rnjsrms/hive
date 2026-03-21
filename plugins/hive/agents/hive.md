@@ -107,9 +107,9 @@ touch "$PROJ_DIR/.hive/archive/.gitkeep"
 **State validation** (run before acting on any state files):
 1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `convoy-*.json` / `wi-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
 2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `wi-{id}.json` exists on disk. If missing, log a warning and remove the dangling reference.
-3. If multiple convoys have `status: "IN-PROGRESS"`, pick the most recent by `created_at` and warn the user about the others.
+3. If multiple convoys have `status: "IN_PROGRESS"`, pick the most recent by `created_at` and warn the user about the others.
 
-Read `.hive/convoys/_index.json`. Check for any convoy with status `IN-PROGRESS`. If found:
+Read `.hive/convoys/_index.json`. Check for any convoy with status `IN_PROGRESS`. If found:
 - Display the convoy name, creation timestamp, and count of work items
 - Ask the user: "Found in-progress convoy: {name}. Resume it, or start fresh?"
 - If resume: reload state, re-spawn agents (60s timeout per agent; if no response, mark `DEAD` and retry once), and continue coordination loop
@@ -238,7 +238,7 @@ RULES:
 - You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
 - You NEVER push to main/master/develop directly.
 - You rebase your branch on the base branch before requesting review.
-- You respond to CHANGES-REQUESTED by making fixes and re-requesting review.
+- You respond to CHANGES_REQUESTED by making fixes and re-requesting review.
 - Always prefix messages with your identity: [hive:dev-{n}].
 - Use GUPP: greet, update status, present work, propose next step.
 - You NEVER pick up work items on your own. Wait for [hive:lead] to assign you.
@@ -253,7 +253,7 @@ You are [hive:reviewer], a Hive code reviewer agent. Your identity is [hive:revi
 RULES:
 - You review code submitted for review by developers.
 - You check: correctness, style, security, performance, test coverage.
-- You respond with APPROVED or CHANGES-REQUESTED plus specific feedback.
+- You respond with APPROVED or CHANGES_REQUESTED plus specific feedback.
 - You update work item history with your verdict.
 - You NEVER write production code.
 - You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
@@ -271,7 +271,7 @@ You are [hive:tester], a Hive testing agent. Your identity is [hive:tester].
 RULES:
 - You run tests for work items that have been reviewed and approved.
 - You run the project's test suite and any new tests added by developers.
-- You respond with TESTS-PASS or TESTS-FAIL plus details.
+- You respond with TESTS_PASS or TESTS_FAIL plus details.
 - You update work item history with your verdict.
 - You may write ADDITIONAL tests if coverage is insufficient, but on the feature branch.
 - You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
@@ -307,7 +307,7 @@ RULES:
 {
   "id": "convoy-{id}",
   "name": "{descriptive name}",
-  "status": "IN-PROGRESS",
+  "status": "IN_PROGRESS",
   "plan": "plan-{timestamp}.md",
   "created_at": "{ISO timestamp}",
   "updated_at": "{ISO timestamp}",
@@ -399,19 +399,19 @@ Blocker types: dependency (route to WI-Y's assignee), technical (escalate to use
 ### State Machine for Work Items
 
 ```
-OPEN → ASSIGNED → IN-PROGRESS → REVIEW → APPROVED → TESTING → READY-TO-MERGE → MERGED
+OPEN → ASSIGNED → IN_PROGRESS → REVIEW → APPROVED → TESTING → READY_TO_MERGE → MERGED
                        ^            |                    |
                        |            v                    v
-                       +-- CHANGES-REQUESTED        TESTS-FAILED
+                       +-- CHANGES_REQUESTED        TESTS_FAILED
                        |                                |
-                       +--- BLOCKED (→ IN-PROGRESS) ----+
+                       +--- BLOCKED (→ IN_PROGRESS) ----+
 
 CANCELLED ← (from any state)
 ```
 
-> **Note:** `BLOCKED` transitions back to `IN-PROGRESS` when the blocker is resolved.
+> **Note:** `BLOCKED` transitions back to `IN_PROGRESS` when the blocker is resolved.
 > There is no separate "unblocked" status — the resolution is recorded as a
-> `BLOCK_RESOLVED` history action and the WI returns to `IN-PROGRESS`.
+> `BLOCK_RESOLVED` history action and the WI returns to `IN_PROGRESS`.
 
 ### Event Handling
 
@@ -427,19 +427,19 @@ Process incoming messages and state changes in this order:
 1. Reviewer has already set status to `APPROVED` — do not re-set it.
 2. `SendMessage` to `[hive:tester]`: "Please test WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
 
-**When reviewer sends "CHANGES-REQUESTED":**
-1. Reviewer has already set status to `CHANGES-REQUESTED` — do not re-set it.
+**When reviewer sends "CHANGES_REQUESTED":**
+1. Reviewer has already set status to `CHANGES_REQUESTED` — do not re-set it.
 2. `SendMessage` to the original developer: "Changes requested on WI-{id}. Feedback: {details}. Please fix and resubmit."
 
-**When tester sends "TESTS-PASS":**
-1. Tester has already set status to `READY-TO-MERGE` — do not re-set it.
-2. Check if ALL work items in the convoy are `READY-TO-MERGE`.
+**When tester sends "TESTS_PASS":**
+1. Tester has already set status to `READY_TO_MERGE` — do not re-set it.
+2. Check if ALL work items in the convoy are `READY_TO_MERGE`.
 
-**When tester sends "TESTS-FAIL":**
-1. Update work item status to `TESTS-FAILED`.
+**When tester sends "TESTS_FAIL":**
+1. Update work item status to `TESTS_FAILED`.
 2. Append to history: `{"action": "TESTS_FAIL", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
 3. `SendMessage` to the original developer: "Tests failed on WI-{id}. Details: {details}. Please fix and resubmit for review."
-4. Update work item status to `IN-PROGRESS`.
+4. Update work item status to `IN_PROGRESS`.
 
 **When a developer reports "BLOCKED":**
 1. Update work item status to `BLOCKED`.
@@ -450,13 +450,13 @@ Process incoming messages and state changes in this order:
    - Ask the user for guidance if the block is external.
 
 **When a blocker is resolved (BLOCK_RESOLVED):**
-1. Update work item status to `IN-PROGRESS`.
+1. Update work item status to `IN_PROGRESS`.
 2. Append to history: `{"action": "BLOCK_RESOLVED", "agent": "lead", "ts": "{ISO}", "notes": "{resolution}"}`
 3. `SendMessage` to the assigned developer: "WI-{id} unblocked. Reason: {resolution}. Please resume work."
 4. Update `.hive/work-items/wi-{id}.json`.
 
-**When ALL work items are "READY-TO-MERGE" (AGENTS-COMPLETE):**
-1. Update convoy status to `AGENTS-COMPLETE`.
+**When ALL work items are "READY_TO_MERGE" (AGENTS_COMPLETE):**
+1. Update convoy status to `AGENTS_COMPLETE`.
 2. Present summary to user:
    ```
    CONVOY COMPLETE -- All work items ready to merge.
@@ -561,7 +561,7 @@ On convoy completion the lead sends a shutdown message to every agent.
   "title": "string",
   "type": "feature | bugfix | refactor | test | docs | research",
   "risk": "low | medium | high",
-  "status": "OPEN | ASSIGNED | IN-PROGRESS | REVIEW | APPROVED | CHANGES-REQUESTED | TESTING | TESTS-FAILED | READY-TO-MERGE | BLOCKED | MERGED | CANCELLED",
+  "status": "OPEN | ASSIGNED | IN_PROGRESS | REVIEW | APPROVED | CHANGES_REQUESTED | TESTING | TESTS_FAILED | READY_TO_MERGE | BLOCKED | MERGED | CANCELLED",
   "assignee": "string | null",
   "convoy": "convoy-{number}",
   "branch": "string | null",
@@ -592,7 +592,7 @@ Each entry in `_index.json` must include at minimum:
 {
   "id": "convoy-{number}",
   "name": "string",
-  "status": "PLANNING | IN-PROGRESS | AGENTS-COMPLETE | MERGED | CANCELLED",
+  "status": "PLANNING | IN_PROGRESS | AGENTS_COMPLETE | MERGED | CANCELLED",
   "plan": "string (filename)",
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601",
@@ -673,7 +673,7 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 
 6. **All work items must pass review AND testing before merge.** No shortcutting the pipeline. Even "simple" changes go through the full cycle.
 
-7. **Dependencies are respected.** A work item cannot begin until its dependencies are `READY-TO-MERGE` or `MERGED`.
+7. **Dependencies are respected.** A work item cannot begin until its dependencies are `READY_TO_MERGE` or `MERGED`.
 
 8. **Communication is structured.** All inter-agent messages use GUPP format and include identity tags.
 

@@ -53,7 +53,7 @@ describeIf('log-activity.sh integration', () => {
   it('should create an activity log entry for a work-item write', () => {
     const wiPath = writeWi('wi-5.json', {
       id: 'wi-5',
-      status: 'in-progress',
+      status: 'IN_PROGRESS',
       history: [{ agent: 'dev-1', action: 'started', notes: 'beginning work' }],
     });
 
@@ -68,7 +68,7 @@ describeIf('log-activity.sh integration', () => {
     expect(entry.agent).toBe('dev-1');
     expect(entry.action).toBe('started');
     expect(entry.work_item).toBe('wi-5');
-    expect(entry.status).toBe('in-progress');
+    expect(entry.status).toBe('IN_PROGRESS');
     expect(entry.notes).toBe('beginning work');
   });
 
@@ -123,7 +123,7 @@ describeIf('log-activity.sh integration', () => {
     for (let i = 1; i <= 3; i++) {
       const wiPath = writeWi(`wi-${i}.json`, {
         id: `wi-${i}`,
-        status: 'in-progress',
+        status: 'IN_PROGRESS',
         history: [{ agent: `dev-${i}`, action: 'updated', notes: `note-${i}` }],
       });
       runScript({ tool_input: { file_path: wiPath } });

@@ -30,7 +30,7 @@ describe('Work item schema', () => {
     title: 'Implement login',
     type: 'feature',
     risk: 'medium',
-    status: 'open',
+    status: 'OPEN',
     assignee: null,
     convoy: 'convoy-1',
     branch: null,
@@ -98,7 +98,7 @@ describe('Convoy schema', () => {
   const validConvoy = {
     id: 'convoy-1',
     name: 'Login Feature',
-    status: 'in-progress',
+    status: 'IN_PROGRESS',
     plan: 'plan-2025-01-01.md',
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
@@ -137,8 +137,8 @@ describe('Convoy schema', () => {
 describe('Agent registry schema', () => {
   const validRegistry = {
     agents: [
-      { id: 'dev-1', role: 'developer', status: 'active', current_work_item: 'wi-1', convoy_id: 'convoy-1', last_heartbeat: null },
-      { id: 'reviewer', role: 'reviewer', status: 'idle', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: '2026-01-01T00:00:00Z' },
+      { id: 'dev-1', role: 'developer', status: 'ACTIVE', current_work_item: 'wi-1', convoy_id: 'convoy-1', last_heartbeat: null },
+      { id: 'reviewer', role: 'reviewer', status: 'IDLE', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: '2026-01-01T00:00:00Z' },
     ],
   };
 
@@ -155,7 +155,7 @@ describe('Agent registry schema', () => {
   it('rejects invalid role', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'manager', status: 'active', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: null }],
+      agents: [{ id: 'x', role: 'manager', status: 'ACTIVE', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: null }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -171,7 +171,7 @@ describe('Agent registry schema', () => {
   it('rejects agent entry missing convoy_id', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'active', current_work_item: null, last_heartbeat: null }],
+      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, last_heartbeat: null }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -179,7 +179,7 @@ describe('Agent registry schema', () => {
   it('rejects agent entry missing last_heartbeat', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'active', current_work_item: null, convoy_id: 'convoy-1' }],
+      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, convoy_id: 'convoy-1' }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -187,7 +187,7 @@ describe('Agent registry schema', () => {
   it('rejects last_heartbeat with invalid date-time format', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'active', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: 'not-a-date' }],
+      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: 'not-a-date' }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -233,8 +233,8 @@ describe('Index schema', () => {
     const validate = ajv.compile(loadSchema('index.schema.json'));
     const valid = {
       items: [
-        { id: 'wi-1', status: 'open', assignee: null },
-        { id: 'wi-2', status: 'in-progress', assignee: 'dev-1' },
+        { id: 'wi-1', status: 'OPEN', assignee: null },
+        { id: 'wi-2', status: 'IN_PROGRESS', assignee: 'dev-1' },
       ],
     };
     expect(validate(valid)).toBe(true);
@@ -253,7 +253,7 @@ describe('Index schema', () => {
   it('rejects extra fields on index entries (additionalProperties)', () => {
     const validate = ajv.compile(loadSchema('index.schema.json'));
     expect(validate({
-      items: [{ id: 'wi-1', status: 'open', assignee: null, extraField: 'bad' }],
+      items: [{ id: 'wi-1', status: 'OPEN', assignee: null, extraField: 'bad' }],
     })).toBe(false);
   });
 });
@@ -267,7 +267,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     expect(validate({
       agents: [{
-        id: 'dev-1', role: 'developer', status: 'active',
+        id: 'dev-1', role: 'developer', status: 'ACTIVE',
         current_work_item: null, convoy_id: 'convoy-1', last_heartbeat: null,
         rogue_field: true,
       }],
@@ -302,7 +302,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const valid = {
       id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'open', convoy: 'convoy-1', description: 'Test',
+      status: 'OPEN', convoy: 'convoy-1', description: 'Test',
       acceptance_criteria: [], dependencies: [], history: [],
       created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
     };
@@ -314,7 +314,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const wi = {
       id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'open', convoy: 'convoy-1', description: 'Test',
+      status: 'OPEN', convoy: 'convoy-1', description: 'Test',
       acceptance_criteria: [], dependencies: [],
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -329,7 +329,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const wi = {
       id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'open', convoy: 'convoy-1', description: 'Test',
+      status: 'OPEN', convoy: 'convoy-1', description: 'Test',
       acceptance_criteria: [], dependencies: [],
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z', rogue_field: 'bad' },

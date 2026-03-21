@@ -13,7 +13,7 @@ describe('buildActivityEntry', () => {
 
   const makeWi = (overrides: any = {}) => JSON.stringify({
     id: 'wi-5',
-    status: 'in-progress',
+    status: 'IN_PROGRESS',
     history: [
       { agent: 'dev-1', action: 'started', notes: 'beginning work' },
     ],
@@ -34,7 +34,7 @@ describe('buildActivityEntry', () => {
       agent: 'dev-1',
       action: 'started',
       work_item: 'wi-5',
-      status: 'in-progress',
+      status: 'IN_PROGRESS',
       notes: 'beginning work',
     });
   });

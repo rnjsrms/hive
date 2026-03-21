@@ -45,10 +45,10 @@ describeIf('validate-completion.sh integration', () => {
     expect(result).toBeDefined();
   });
 
-  it('should exit 0 for WI with ready-to-merge status and TESTS_PASS and APPROVED in history', () => {
+  it('should exit 0 for WI with READY_TO_MERGE status and TESTS_PASS and APPROVED in history', () => {
     const wi = {
       id: 'WI-1',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'low',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -68,10 +68,10 @@ describeIf('validate-completion.sh integration', () => {
     expect(result).toBeDefined();
   });
 
-  it('should exit 2 when WI has in-progress status', () => {
+  it('should exit 2 when WI has IN_PROGRESS status', () => {
     const wi = {
       id: 'WI-2',
-      status: 'in-progress',
+      status: 'IN_PROGRESS',
       risk: 'low',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -98,7 +98,7 @@ describeIf('validate-completion.sh integration', () => {
   it('should exit 2 when WI has no TESTS_PASS in history', () => {
     const wi = {
       id: 'WI-3',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'low',
       history: [
         { action: 'started', agent: 'dev-1', ts: '2026-01-01T00:00:00Z' },
@@ -125,7 +125,7 @@ describeIf('validate-completion.sh integration', () => {
   it('should exit 2 for high-risk WI without APPROVED in history', () => {
     const wi = {
       id: 'WI-4',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'high',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -152,7 +152,7 @@ describeIf('validate-completion.sh integration', () => {
   it('should exit 2 for low-risk WI without APPROVED in history', () => {
     const wi = {
       id: 'WI-6',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'low',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -178,7 +178,7 @@ describeIf('validate-completion.sh integration', () => {
   it('should not match WI-1 against WI-10 file (exact matching)', () => {
     const wi10 = {
       id: 'WI-10',
-      status: 'in-progress',
+      status: 'IN_PROGRESS',
       risk: 'low',
       history: [],
     };
