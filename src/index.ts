@@ -14,10 +14,4 @@ export {
   type FsOps,
   type ValidationResult,
 } from './validate-completion.js';
-export {
-  computeDelta,
-  hasRegression,
-  formatDeltaSummary,
-  type HiveMetrics,
-  type MetricsDelta,
-} from './metrics.js';
+export { buildActivityEntry, type ActivityEntry } from './log-activity.js';

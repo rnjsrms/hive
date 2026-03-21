@@ -93,13 +93,6 @@ Create empty log files:
 touch "$PROJ_DIR/.hive/logs/activity.jsonl"
 touch "$PROJ_DIR/.hive/logs/communications.jsonl"
 touch "$PROJ_DIR/.hive/logs/task-ledger.jsonl"
-touch "$PROJ_DIR/.hive/logs/decisions.jsonl"
-touch "$PROJ_DIR/.hive/logs/autoresearch.jsonl"
-```
-
-`.hive/metrics.json`:
-```json
-{"autoresearch_status": "idle", "autoresearch_started_at": null, "consecutive_reverts": 0}
 ```
 
 Create `.gitkeep` files for empty directories:
@@ -368,24 +361,6 @@ This triggers every 3 minutes. On each trigger, check:
 - Are any work items stuck (no update for >10 minutes)?
 - Are there unassigned work items that could be picked up?
 
-### 4F. AutoResearch concurrency protocol
-
-When running AutoResearch (metric-driven improvement loop), the lead MUST follow this
-protocol to prevent overlapping iterations:
-
-1. **Before starting**: Read `.hive/metrics.json`. If `autoresearch_status` is `"RUNNING"`,
-   skip this iteration. If `autoresearch_status` is `"RUNNING"` but `autoresearch_started_at`
-   is older than 15 minutes, assume a crash — reset status to `"IDLE"` and proceed.
-
-2. **On iteration start**: Set `autoresearch_status` to `"RUNNING"` and
-   `autoresearch_started_at` to the current ISO timestamp.
-
-3. **On iteration end** (merge or revert): Set `autoresearch_status` to `"IDLE"`.
-
-4. **On error**: Set `autoresearch_status` to `"IDLE"` before exiting.
-
-Additional guard: auto-stop after 3 consecutive reverts (no improvement found).
-
 ---
 
 ## Phase 5: Coordination Loop
@@ -504,16 +479,6 @@ Process incoming messages and state changes in this order:
 - If a worker has been unresponsive for >5 minutes, ping them.
 - Log every state transition to `.hive/logs/activity.jsonl`.
 - NEVER exit the loop until convoy status is `MERGED` or the user explicitly says to stop.
-
-### Decision Logging
-
-When the lead makes significant decisions during coordination, append to `.hive/logs/decisions.jsonl`:
-- Tech choice resolutions
-- Scope changes (adding/removing/modifying WIs mid-convoy)
-- Dependency substitutions
-- WI cancellations
-- Re-assignments (with reason)
-- Conflict resolutions between reviewer and developer
 
 ---
 

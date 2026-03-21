@@ -354,8 +354,6 @@ describe('hive.md bootstrap structure validation', () => {
       'activity.jsonl',
       'communications.jsonl',
       'task-ledger.jsonl',
-      'decisions.jsonl',
-      'autoresearch.jsonl',
     ];
     for (const file of requiredFiles) {
       expect(
