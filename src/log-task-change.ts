@@ -10,7 +10,6 @@ export function buildTaskChangeEntry(inputJson: string): TaskChangeEntry | null 
     const data = JSON.parse(inputJson);
     let output = data.tool_output || '';
     if (typeof output === 'object') output = JSON.stringify(output);
-    if (output.length > 2000) output = output.substring(0, 2000) + '...[truncated]';
     return {
       ts: new Date().toISOString(),
       tool: data.tool_name || '',
