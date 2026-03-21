@@ -27,7 +27,7 @@ try {
 
   let wiFile = path.join(wiDir, wiId + '.json');
   if (!fs.existsSync(wiFile)) {
-    const files = fs.readdirSync(wiDir).filter(f => f.includes(wiId) && !f.startsWith('_'));
+    const files = fs.readdirSync(wiDir).filter(f => f === wiId.toLowerCase() + '.json');
     if (files.length > 0) wiFile = path.join(wiDir, files[0]);
     else process.exit(0);
   }
@@ -43,8 +43,8 @@ try {
   const history = wi.history || [];
   if (!history.some(h => h.action === 'TESTS_PASS'))
     errors.push('Missing tester TESTS_PASS entry in history');
-  if (wi.risk === 'high' && !history.some(h => h.action === 'APPROVED'))
-    errors.push('High-risk item missing reviewer APPROVED entry in history');
+  if (!history.some(h => h.action === 'APPROVED'))
+    errors.push('Missing reviewer APPROVED entry in history');
 
   if (errors.length > 0) {
     process.stderr.write(errors.join('\\n') + '\\n');
