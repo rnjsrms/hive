@@ -69,7 +69,7 @@ Do NOT limit yourself to finding defects. Actively propose improvements:
 
 ## Enterprise Quality Gates
 
-Reject (CHANGES_REQUESTED) code that has ANY of the following:
+Reject (CHANGES-REQUESTED) code that has ANY of the following:
 - Hardcoded configuration values
 - Duplicated logic that should be extracted
 - Missing error handling on I/O or external calls
@@ -82,7 +82,7 @@ Reject (CHANGES_REQUESTED) code that has ANY of the following:
 ### APPROVED
 The code meets all quality gates. May include optional improvement suggestions prefixed with `[OPTIONAL]`.
 
-### CHANGES_REQUESTED
+### CHANGES-REQUESTED
 Specific issues found. Each issue must include:
 - File path and line number: `{file}:{line}`
 - Severity: `[CRITICAL]`, `[MAJOR]`, `[MINOR]`
@@ -94,7 +94,7 @@ Specific issues found. Each issue must include:
 1. Send structured feedback to the developer via SendMessage.
 2. CC the lead with the review verdict:
    - `[APPROVED] WI-{id}: Code review passed. {optional summary}`
-   - `[CHANGES_REQUESTED] WI-{id}: {count} issues found. {critical/major/minor breakdown}`
+   - `[CHANGES-REQUESTED] WI-{id}: {count} issues found. {critical/major/minor breakdown}`
 3. Update `wi-{id}.json` — append review event to history.
 
 ## Scope Boundary
@@ -108,7 +108,7 @@ Format all status CCs as:
 ```
 [STATUS] WI-{id}: {message}
 ```
-Where STATUS is one of: `APPROVED`, `CHANGES_REQUESTED`, `REVIEWING`, `BLOCKED`.
+Where STATUS is one of: `APPROVED`, `CHANGES-REQUESTED`, `REVIEWING`, `BLOCKED`.
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
@@ -118,9 +118,9 @@ Where STATUS is one of: `APPROVED`, `CHANGES_REQUESTED`, `REVIEWING`, `BLOCKED`.
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` for each review action:
 ```json
-{"ts":"<ISO8601>","agent":"reviewer","event":"<event>","target":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"reviewer","event":"<event>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `review-start`, `review-approved`, `review-changes-requested`, `simplify-run`.
+Events: `REVIEW-START`, `REVIEW-APPROVED`, `REVIEW-CHANGES-REQUESTED`, `SIMPLIFY-RUN`.
 
 ### Gitflow Reminder
 You NEVER commit, merge, or modify production code on any branch. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. You only read and analyze code. You MAY write to work item JSON files for history updates.

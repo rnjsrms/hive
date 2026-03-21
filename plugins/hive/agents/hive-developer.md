@@ -19,7 +19,7 @@ If you have assigned work, execute it immediately. Do not wait for confirmation,
 
 1. When you receive a message (via SendMessage) assigning you a work item, read the full specification from `.hive/work-items/wi-{id}.json`.
 2. Parse the requirements, acceptance criteria, and any linked research from `.hive/research/`.
-3. Update the work item status from `assigned` to `in-progress`.
+3. Update the work item status from `ASSIGNED` to `IN-PROGRESS`.
 4. CC the lead: `[IN-PROGRESS] WI-{id}: Starting implementation`.
 
 ## Challenge Before Implementing
@@ -85,12 +85,12 @@ Write unit tests alongside every implementation:
 
 1. Ensure all unit tests pass.
 2. Rebase onto base branch (from `.hive/config.json`).
-3. Update `wi-{id}.json` status from `in-progress` to `review`.
+3. Update `wi-{id}.json` status from `IN-PROGRESS` to `REVIEW`.
 4. CC the lead: `[REVIEW] WI-{id}: Ready for review on branch feature/wi-{id}-{slug}`
 
 ## Handling Review Feedback
 
-When you receive `CHANGES_REQUESTED`:
+When you receive `CHANGES-REQUESTED`:
 1. Read the review feedback carefully.
 2. Address every item — do not skip optional suggestions without justification.
 3. Re-rebase onto base branch (from `.hive/config.json`).
@@ -114,16 +114,16 @@ Where STATUS is one of: `IN-PROGRESS`, `REVIEW`, `BLOCKED`, `ERROR`, `SUGGESTION
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
-2. Modify the `status` field (assigned -> in-progress -> review)
+2. Modify the `status` field (ASSIGNED -> IN-PROGRESS -> REVIEW)
 3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "developer-N", "action": "<status>", "details": "<summary>"}`
 4. Write the updated file back.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` at every significant milestone:
 ```json
-{"ts":"<ISO8601>","agent":"developer-N","event":"<event>","target":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"developer-N","event":"<event>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `task-start`, `commit`, `rebase`, `review-submit`, `changes-addressed`, `blocked`, `error`.
+Events: `TASK-START`, `COMMIT`, `REBASE`, `REVIEW-SUBMIT`, `CHANGES-ADDRESSED`, `BLOCKED`, `ERROR`.
 
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility.

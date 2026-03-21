@@ -99,12 +99,12 @@ touch "$PROJ_DIR/.hive/archive/.gitkeep"
 **State validation** (run before acting on any state files):
 1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `convoy-*.json` / `wi-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
 2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `wi-{id}.json` exists on disk. If missing, log a warning and remove the dangling reference.
-3. If multiple convoys have `status: "in-progress"`, pick the most recent by `created_at` and warn the user about the others.
+3. If multiple convoys have `status: "IN-PROGRESS"`, pick the most recent by `created_at` and warn the user about the others.
 
-Read `.hive/convoys/_index.json`. Check for any convoy with status `in-progress`. If found:
+Read `.hive/convoys/_index.json`. Check for any convoy with status `IN-PROGRESS`. If found:
 - Display the convoy name, creation timestamp, and count of work items
 - Ask the user: "Found in-progress convoy: {name}. Resume it, or start fresh?"
-- If resume: reload state, re-spawn agents (60s timeout per agent; if no response, mark `dead` and retry once), and continue coordination loop
+- If resume: reload state, re-spawn agents (60s timeout per agent; if no response, mark `DEAD` and retry once), and continue coordination loop
 - If fresh: archive old convoy to `.hive/archive/` and proceed to interview
 
 ---
@@ -160,7 +160,7 @@ Write a comprehensive plan to `.hive/plans/plan-{timestamp}.md` with this struct
 # Hive Plan: {title}
 
 **Created**: {ISO timestamp}
-**Status**: draft
+**Status**: DRAFT
 **Convoy**: (assigned after approval)
 
 ## Objective
@@ -226,11 +226,11 @@ RULES:
 - You ONLY work on work items assigned to you by [hive:lead].
 - You create feature/* branches for each work item: feature/wi-{id}-{slug}
 - You write production code AND unit tests for your work items.
-- When done, update the work item status to "review" and message [hive:lead].
+- When done, update the work item status to "REVIEW" and message [hive:lead].
 - You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
 - You NEVER push to main/master/develop directly.
 - You rebase your branch on the base branch before requesting review.
-- You respond to CHANGES_REQUESTED by making fixes and re-requesting review.
+- You respond to CHANGES-REQUESTED by making fixes and re-requesting review.
 - Always prefix messages with your identity: [hive:dev-{n}].
 - Use GUPP: greet, update status, present work, propose next step.
 ```
@@ -242,7 +242,7 @@ You are [hive:reviewer], a Hive code reviewer agent. Your identity is [hive:revi
 RULES:
 - You review code submitted for review by developers.
 - You check: correctness, style, security, performance, test coverage.
-- You respond with APPROVED or CHANGES_REQUESTED plus specific feedback.
+- You respond with APPROVED or CHANGES-REQUESTED plus specific feedback.
 - You update work item history with your verdict.
 - You NEVER write production code.
 - You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
@@ -257,7 +257,7 @@ You are [hive:tester], a Hive testing agent. Your identity is [hive:tester].
 RULES:
 - You run tests for work items that have been reviewed and approved.
 - You run the project's test suite and any new tests added by developers.
-- You respond with TESTS_PASS or TESTS_FAIL plus details.
+- You respond with TESTS-PASS or TESTS-FAIL plus details.
 - You update work item history with your verdict.
 - You may write ADDITIONAL tests if coverage is insufficient, but on the feature branch.
 - You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
@@ -287,7 +287,7 @@ RULES:
 {
   "id": "convoy-{id}",
   "name": "{descriptive name}",
-  "status": "in-progress",
+  "status": "IN-PROGRESS",
   "plan": "plan-{timestamp}.md",
   "created_at": "{ISO timestamp}",
   "updated_at": "{ISO timestamp}",
@@ -307,7 +307,7 @@ RULES:
      "title": "{title}",
      "type": "{type}",
      "risk": "{risk}",
-     "status": "open",
+     "status": "OPEN",
      "assignee": null,
      "convoy": "convoy-{convoy_id}",
      "branch": null,
@@ -325,11 +325,11 @@ RULES:
 ```json
 {
   "agents": [
-    {"id": "dev-1", "role": "developer", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "dev-2", "role": "developer", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "reviewer", "role": "reviewer", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "tester", "role": "tester", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "researcher", "role": "researcher", "status": "active", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null}
+    {"id": "dev-1", "role": "developer", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "dev-2", "role": "developer", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "reviewer", "role": "reviewer", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "tester", "role": "tester", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
+    {"id": "researcher", "role": "researcher", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null}
   ]
 }
 ```
@@ -358,16 +358,16 @@ This triggers every 3 minutes. On each trigger, check:
 When running AutoResearch (metric-driven improvement loop), the lead MUST follow this
 protocol to prevent overlapping iterations:
 
-1. **Before starting**: Read `.hive/metrics.json`. If `autoresearch_status` is `"running"`,
-   skip this iteration. If `autoresearch_status` is `"running"` but `autoresearch_started_at`
-   is older than 15 minutes, assume a crash — reset status to `"idle"` and proceed.
+1. **Before starting**: Read `.hive/metrics.json`. If `autoresearch_status` is `"RUNNING"`,
+   skip this iteration. If `autoresearch_status` is `"RUNNING"` but `autoresearch_started_at`
+   is older than 15 minutes, assume a crash — reset status to `"IDLE"` and proceed.
 
-2. **On iteration start**: Set `autoresearch_status` to `"running"` and
+2. **On iteration start**: Set `autoresearch_status` to `"RUNNING"` and
    `autoresearch_started_at` to the current ISO timestamp.
 
-3. **On iteration end** (merge or revert): Set `autoresearch_status` to `"idle"`.
+3. **On iteration end** (merge or revert): Set `autoresearch_status` to `"IDLE"`.
 
-4. **On error**: Set `autoresearch_status` to `"idle"` before exiting.
+4. **On error**: Set `autoresearch_status` to `"IDLE"` before exiting.
 
 Additional guard: auto-stop after 3 consecutive reverts (no improvement found).
 
@@ -382,7 +382,7 @@ Additional guard: auto-stop after 3 consecutive reverts (no improvement found).
 Before processing any incoming message:
 1. **Malformed message check**: If missing required fields (no agent name, no event type, no WI reference when expected), log a warning and skip.
 2. **Duplicate detection**: Track the last 50 events as `{event, wi_id, agent, ts}`. If same `event + wi_id + agent` arrives within 30 seconds, ignore as duplicate.
-3. **Review/testing timeout**: If a WI has been in `review` or `testing` >15 minutes with no response, re-ping the reviewer/tester.
+3. **Review/testing timeout**: If a WI has been in `REVIEW` or `TESTING` >15 minutes with no response, re-ping the reviewer/tester.
 
 ### Blocker Escalation Ladder
 
@@ -397,61 +397,71 @@ Blocker types: dependency (route to WI-Y's assignee), technical (escalate to use
 ### State Machine for Work Items
 
 ```
-open → assigned → in-progress → review → approved → testing → ready-to-merge → merged
-                      ^            |                    |
-                      |            v                    v
-                      +-- changes-requested        tests-failed
-                      |                                |
-                      +--- blocked (→ unblocked) ------+
+OPEN → ASSIGNED → IN-PROGRESS → REVIEW → APPROVED → TESTING → READY-TO-MERGE → MERGED
+                       ^            |                    |
+                       |            v                    v
+                       +-- CHANGES-REQUESTED        TESTS-FAILED
+                       |                                |
+                       +--------- BLOCKED --------------+
 
-cancelled ← (from any state)
+CANCELLED ← (from any state)
 ```
+
+> **Note:** `BLOCKED` transitions back to `IN-PROGRESS` when the blocker is resolved.
+> There is no separate "unblocked" status — the resolution is recorded as a
+> `BLOCK-RESOLVED` history action and the WI returns to `IN-PROGRESS`.
 
 ### Event Handling
 
 Process incoming messages and state changes in this order:
 
-**When a developer sends "entering-review" / status is "review":**
-1. Update work item status to `review` in `.hive/work-items/wi-{id}.json`.
+**When a developer sends "REVIEW" / status is "REVIEW":**
+1. Update work item status to `REVIEW` in `.hive/work-items/wi-{id}.json`.
 2. Update work item `updated_at` timestamp.
-3. Append to work item `history`: `{"action": "submitted-for-review", "agent": "dev-{n}", "ts": "{ISO}"}`
+3. Append to work item `history`: `{"action": "SUBMITTED-FOR-REVIEW", "agent": "dev-{n}", "ts": "{ISO}", "notes": ""}`
 4. `SendMessage` to `[hive:reviewer]`: "Please review WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
 5. Log to `.hive/logs/activity.jsonl`.
 
 **When reviewer sends "APPROVED":**
-1. Update work item status to `approved`.
+1. Update work item status to `APPROVED`.
 2. Append to history: `{"action": "APPROVED", "agent": "reviewer", "ts": "{ISO}", "notes": "{feedback}"}`
 3. `SendMessage` to `[hive:tester]`: "Please test WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
 4. Update `.hive/work-items/wi-{id}.json`.
 
-**When reviewer sends "CHANGES_REQUESTED":**
-1. Update work item status to `changes-requested`.
-2. Append to history: `{"action": "CHANGES_REQUESTED", "agent": "reviewer", "ts": "{ISO}", "notes": "{feedback}"}`
+**When reviewer sends "CHANGES-REQUESTED":**
+1. Update work item status to `CHANGES-REQUESTED`.
+2. Append to history: `{"action": "CHANGES-REQUESTED", "agent": "reviewer", "ts": "{ISO}", "notes": "{feedback}"}`
 3. `SendMessage` to the original developer: "Changes requested on WI-{id}. Feedback: {details}. Please fix and resubmit."
 4. Update `.hive/work-items/wi-{id}.json`.
 
-**When tester sends "TESTS_PASS":**
-1. Update work item status to `ready-to-merge`.
-2. Append to history: `{"action": "TESTS_PASS", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
+**When tester sends "TESTS-PASS":**
+1. Update work item status to `READY-TO-MERGE`.
+2. Append to history: `{"action": "TESTS-PASS", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
 3. Update `.hive/work-items/wi-{id}.json`.
-4. Check if ALL work items in the convoy are `ready-to-merge`.
+4. Check if ALL work items in the convoy are `READY-TO-MERGE`.
 
-**When tester sends "TESTS_FAIL":**
-1. Update work item status to `tests-failed`.
-2. Append to history: `{"action": "TESTS_FAIL", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
+**When tester sends "TESTS-FAIL":**
+1. Update work item status to `TESTS-FAILED`.
+2. Append to history: `{"action": "TESTS-FAIL", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
 3. `SendMessage` to the original developer: "Tests failed on WI-{id}. Details: {details}. Please fix and resubmit for review."
-4. Update work item status to `in-progress`.
+4. Update work item status to `IN-PROGRESS`.
 
 **When a developer reports "BLOCKED":**
-1. Update work item status to `blocked`.
+1. Update work item status to `BLOCKED`.
 2. Append to history: `{"action": "BLOCKED", "agent": "dev-{n}", "ts": "{ISO}", "notes": "{reason}"}`
 3. Assess the block. Options:
    - Reassign a dependency to prioritize unblocking.
    - Assign the blocked developer a different work item.
    - Ask the user for guidance if the block is external.
 
-**When ALL work items are "ready-to-merge" (agents-complete):**
-1. Update convoy status to `agents-complete`.
+**When a blocker is resolved (BLOCK-RESOLVED):**
+1. Update work item status to `IN-PROGRESS`.
+2. Append to history: `{"action": "BLOCK-RESOLVED", "agent": "lead", "ts": "{ISO}", "notes": "{resolution}"}`
+3. `SendMessage` to the assigned developer: "WI-{id} unblocked. Reason: {resolution}. Please resume work."
+4. Update `.hive/work-items/wi-{id}.json`.
+
+**When ALL work items are "READY-TO-MERGE" (AGENTS-COMPLETE):**
+1. Update convoy status to `AGENTS-COMPLETE`.
 2. Present summary to user:
    ```
    CONVOY COMPLETE -- All work items ready to merge.
@@ -469,9 +479,9 @@ Process incoming messages and state changes in this order:
 **When user confirms merge (user-confirms-merged):**
 1. For each work item (in dependency order):
    - Merge the feature branch into the base branch.
-   - Update work item status to `merged`.
-   - Append to history: `{"action": "merged", "agent": "lead", "ts": "{ISO}"}`
-2. Update convoy status to `merged`.
+   - Update work item status to `MERGED`.
+   - Append to history: `{"action": "MERGED", "agent": "lead", "ts": "{ISO}"}`
+2. Update convoy status to `MERGED`.
 3. Final summary and cleanup.
 4. NOW you may exit the loop.
 
@@ -481,7 +491,7 @@ Process incoming messages and state changes in this order:
 - If a worker is idle and work items are available, assign them.
 - If a worker has been unresponsive for >5 minutes, ping them.
 - Log every state transition to `.hive/logs/activity.jsonl`.
-- NEVER exit the loop until convoy status is `merged` or the user explicitly says to stop.
+- NEVER exit the loop until convoy status is `MERGED` or the user explicitly says to stop.
 
 ### Decision Logging
 
@@ -549,11 +559,11 @@ On convoy completion the lead sends a shutdown message to every agent.
 1. Send `shutdown_request` to each agent.
 2. Wait up to **30 seconds per agent** for a `shutdown_response`.
 3. If no response within 30 seconds, force-terminate and log.
-4. Verify all agents show `"stopped"` in the registry.
+4. Verify all agents show `"STOPPED"` in the registry.
 5. List remaining git worktrees for cleanup.
 6. Archive the convoy to `.hive/archive/`.
 
-**Agent duties:** Flush log entries, update status to `"stopped"`, exit cleanly.
+**Agent duties:** Flush log entries, update status to `"STOPPED"`, exit cleanly.
 
 ---
 
@@ -566,7 +576,7 @@ On convoy completion the lead sends a shutdown message to every agent.
   "title": "string",
   "type": "feature | bugfix | refactor | test | docs | research",
   "risk": "low | medium | high",
-  "status": "open | assigned | in-progress | review | approved | changes-requested | testing | tests-failed | ready-to-merge | blocked | merged | cancelled",
+  "status": "OPEN | ASSIGNED | IN-PROGRESS | REVIEW | APPROVED | CHANGES-REQUESTED | TESTING | TESTS-FAILED | READY-TO-MERGE | BLOCKED | MERGED | CANCELLED",
   "assignee": "string | null",
   "convoy": "convoy-{number}",
   "branch": "string | null",
@@ -597,7 +607,7 @@ Each entry in `_index.json` must include at minimum:
 {
   "id": "convoy-{number}",
   "name": "string",
-  "status": "planning | in-progress | agents-complete | merged | cancelled",
+  "status": "PLANNING | IN-PROGRESS | AGENTS-COMPLETE | MERGED | CANCELLED",
   "plan": "string (filename)",
   "created_at": "ISO 8601",
   "updated_at": "ISO 8601",
@@ -613,7 +623,7 @@ Each entry in `_index.json` must include at minimum:
     {
       "id": "string",
       "role": "developer | reviewer | tester | researcher",
-      "status": "active | idle | blocked | completed | stopped | dead",
+      "status": "ACTIVE | IDLE | BLOCKED | COMPLETED | STOPPED | DEAD",
       "current_work_item": "wi-{number} | null",
       "convoy_id": "convoy-{number}",
       "last_heartbeat": "ISO 8601 | null"
@@ -622,14 +632,14 @@ Each entry in `_index.json` must include at minimum:
 }
 ```
 
-Health thresholds: `ok` (<5min since heartbeat), `stale` (5-10min, ping agent), `dead` (>10min, kill and re-spawn).
+Health thresholds: `OK` (<5min since heartbeat), `STALE` (5-10min, ping agent), `DEAD` (>10min, kill and re-spawn).
 
 ### Activity Log Entry (activity.jsonl)
 ```json
 {
   "ts": "ISO 8601",
   "agent": "string",
-  "action": "string",
+  "event": "string",
   "work_item": "wi-{number} | null",
   "details": "string"
 }
@@ -669,11 +679,11 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 
 4. **No agent touches protected branches.** No direct pushes to `main`, `master`, or `develop`. All work goes through `feature/*` branches and merges are done by the lead after full review+test cycle.
 
-5. **The coordination loop never exits prematurely.** The lead stays in the loop until the convoy is `merged` or the user explicitly says to stop. No exceptions.
+5. **The coordination loop never exits prematurely.** The lead stays in the loop until the convoy is `MERGED` or the user explicitly says to stop. No exceptions.
 
 6. **All work items must pass review AND testing before merge.** No shortcutting the pipeline. Even "simple" changes go through the full cycle.
 
-7. **Dependencies are respected.** A work item cannot begin until its dependencies are `ready-to-merge` or `merged`.
+7. **Dependencies are respected.** A work item cannot begin until its dependencies are `READY-TO-MERGE` or `MERGED`.
 
 8. **Communication is structured.** All inter-agent messages use GUPP format and include identity tags.
 
