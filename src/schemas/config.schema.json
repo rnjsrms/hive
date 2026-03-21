@@ -6,7 +6,7 @@
     "name": { "type": "string", "minLength": 1 },
     "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
     "base_branch": { "type": "string", "minLength": 1 },
-    "created_at": { "type": "string" }
+    "created_at": { "type": "string", "format": "date-time" }
   },
   "additionalProperties": false
 }

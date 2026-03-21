@@ -276,6 +276,16 @@ describe('.hive/config.json schema validation', () => {
     expect(validate({ name: 'hive', version: '1.0.0', rogue: true })).toBe(false);
   });
 
+  it('accepts valid created_at with ISO 8601 date-time format', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ name: 'hive', version: '1.0.0', created_at: '2026-03-21T12:00:00Z' })).toBe(true);
+  });
+
+  it('rejects created_at with invalid date-time format', () => {
+    const validate = ajv.compile(loadSchema('config.schema.json'));
+    expect(validate({ name: 'hive', version: '1.0.0', created_at: 'not-a-date' })).toBe(false);
+  });
+
   it('hive.md bootstrap config template matches config schema', () => {
     const hiveMd = readFileSync(join(ROOT, 'plugins/hive/agents/hive.md'), 'utf-8');
     // Extract the JSON config template from hive.md
