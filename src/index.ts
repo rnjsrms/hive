@@ -15,3 +15,10 @@ export {
   type FsOps,
   type ValidationResult,
 } from './validate-completion.js';
+export {
+  computeDelta,
+  hasRegression,
+  formatDeltaSummary,
+  type HiveMetrics,
+  type MetricsDelta,
+} from './metrics.js';
