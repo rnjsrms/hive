@@ -56,16 +56,6 @@
           }
         ]
       }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "powershell -File \"${CLAUDE_PLUGIN_ROOT}/scripts/notify.ps1\""
-          }
-        ]
-      }
     ]
   }
 }
