@@ -25,3 +25,11 @@ export {
   type Sprint,
   type WorkItem,
 } from './sprint-factory.js';
+export {
+  initializeHive,
+  validateState,
+  type FsOps as BootstrapFsOps,
+  type InitResult,
+  type ValidationResult as BootstrapValidationResult,
+  type ValidationWarning,
+} from './bootstrap.js';
