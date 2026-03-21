@@ -103,16 +103,17 @@ Where STATUS is one of: `TESTING`, `TESTS-PASS`, `TESTS-FAIL`, `BLOCKED`, `READY
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
-2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "tester", "action": "<verdict>", "details": "<summary>"}`
-3. If TESTS-PASS, update `status` to `READY-TO-MERGE`.
-4. Write the updated file back.
+2. When **starting** tests, update `status` to `TESTING` before running the test suite.
+3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "tester", "action": "<verdict>", "notes": "<summary>"}`
+4. If TESTS-PASS, update `status` to `READY-TO-MERGE`.
+5. Write the updated file back.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` for each test action:
 ```json
-{"ts":"<ISO8601>","agent":"tester","event":"<event>","work_item":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"tester","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `TEST-START`, `TEST-WRITE`, `SUITE-RUN`, `TESTS-PASS`, `TESTS-FAIL`, `READY-TO-MERGE`.
+Events: `TEST_START`, `TEST_WRITE`, `SUITE_RUN`, `TESTS_PASS`, `TESTS_FAIL`, `READY_TO_MERGE`.
 
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility. You report readiness — you do not merge.

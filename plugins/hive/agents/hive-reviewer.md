@@ -112,15 +112,18 @@ Where STATUS is one of: `APPROVED`, `CHANGES-REQUESTED`, `REVIEWING`, `BLOCKED`.
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
-2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "details": "<summary>"}`
-3. Write the updated file back. Do not change the `status` field — that is the lead's responsibility after review.
+2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "notes": "<summary>"}`
+3. Update the `status` field based on your verdict:
+   - On **APPROVED** verdict: set `status` to `APPROVED`
+   - On **CHANGES-REQUESTED** verdict: set `status` to `CHANGES-REQUESTED`
+4. Write the updated file back.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` for each review action:
 ```json
-{"ts":"<ISO8601>","agent":"reviewer","event":"<event>","work_item":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"reviewer","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `REVIEW-START`, `REVIEW-APPROVED`, `REVIEW-CHANGES-REQUESTED`, `SIMPLIFY-RUN`.
+Events: `REVIEW_START`, `REVIEW_APPROVED`, `REVIEW_CHANGES_REQUESTED`, `SIMPLIFY_RUN`.
 
 ### Gitflow Reminder
 You NEVER commit, merge, or modify production code on any branch. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. You only read and analyze code. You MAY write to work item JSON files for history updates.

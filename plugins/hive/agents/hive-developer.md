@@ -37,7 +37,7 @@ Format challenges as: `[SUGGESTION] WI-{id}: {concern and proposed alternative}`
 - Work exclusively in your worktree on branch: `feature/wi-{id}-{slug}`
 - **NEVER commit to main, master, develop, release/*, or hotfix/*. NEVER.**
 - Only feature branches. If you find yourself on any other branch, stop and reassess.
-- Commit messages use prefix: `[hive:developer-N] {concise description}`
+- Commit messages use prefix: `[hive:dev-N] {concise description}`
 - Before marking review, rebase your feature branch onto the base branch (read `base_branch` from `.hive/config.json`):
   ```
   git fetch origin
@@ -115,15 +115,15 @@ Where STATUS is one of: `IN-PROGRESS`, `REVIEW`, `BLOCKED`, `ERROR`, `SUGGESTION
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
 2. Modify the `status` field (ASSIGNED -> IN-PROGRESS -> REVIEW)
-3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "developer-N", "action": "<status>", "details": "<summary>"}`
+3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "dev-N", "action": "<status>", "notes": "<summary>"}`
 4. Write the updated file back.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` at every significant milestone:
 ```json
-{"ts":"<ISO8601>","agent":"developer-N","event":"<event>","work_item":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"dev-N","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
-Events: `TASK-START`, `COMMIT`, `REBASE`, `REVIEW-SUBMIT`, `CHANGES-ADDRESSED`, `BLOCKED`, `ERROR`.
+Events: `TASK_START`, `COMMIT`, `REBASE`, `REVIEW_SUBMIT`, `CHANGES_ADDRESSED`, `BLOCKED`, `ERROR`.
 
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility.
