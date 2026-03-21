@@ -12,7 +12,7 @@ export type WorkItemStatus =
   | 'MERGED'
   | 'CANCELLED';
 
-const VALID_TRANSITIONS: Record<WorkItemStatus, WorkItemStatus[]> = {
+export const VALID_TRANSITIONS: Record<WorkItemStatus, WorkItemStatus[]> = {
   OPEN: ['ASSIGNED', 'CANCELLED'],
   ASSIGNED: ['IN_PROGRESS', 'CANCELLED'],
   IN_PROGRESS: ['REVIEW', 'BLOCKED', 'CANCELLED'],

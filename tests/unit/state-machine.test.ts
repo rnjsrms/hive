@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isValidTransition, type WorkItemStatus } from '../../src/state-machine.js';
+import { isValidTransition, VALID_TRANSITIONS, type WorkItemStatus } from '../../src/state-machine.js';
 
 const ALL_STATUSES: WorkItemStatus[] = [
   'OPEN', 'ASSIGNED', 'IN_PROGRESS', 'REVIEW', 'APPROVED',
@@ -96,6 +96,41 @@ describe('isValidTransition', () => {
   describe('self-transitions are not allowed', () => {
     it.each(ALL_STATUSES)('%s → %s returns false', (status) => {
       expect(isValidTransition(status, status)).toBe(false);
+    });
+  });
+
+  // --- Edge cases ---
+
+  describe('edge cases', () => {
+    it('returns false for empty string as from', () => {
+      expect(isValidTransition('' as WorkItemStatus, 'OPEN')).toBe(false);
+    });
+
+    it('returns false for empty string as to', () => {
+      expect(isValidTransition('OPEN', '' as WorkItemStatus)).toBe(false);
+    });
+
+    it('returns false for unknown status as from', () => {
+      expect(isValidTransition('UNKNOWN' as WorkItemStatus, 'OPEN')).toBe(false);
+    });
+
+    it('returns false for unknown status as to', () => {
+      expect(isValidTransition('OPEN', 'UNKNOWN' as WorkItemStatus)).toBe(false);
+    });
+  });
+
+  // --- VALID_TRANSITIONS export ---
+
+  describe('VALID_TRANSITIONS map', () => {
+    it('is exported and contains all statuses as keys', () => {
+      for (const status of ALL_STATUSES) {
+        expect(VALID_TRANSITIONS).toHaveProperty(status);
+      }
+    });
+
+    it('terminal states have empty transition arrays', () => {
+      expect(VALID_TRANSITIONS.MERGED).toEqual([]);
+      expect(VALID_TRANSITIONS.CANCELLED).toEqual([]);
     });
   });
 });

@@ -15,4 +15,13 @@ export {
   type ValidationResult,
 } from './validate-completion.js';
 export { buildActivityEntry, type ActivityEntry } from './log-activity.js';
-export { isValidTransition, type WorkItemStatus } from './state-machine.js';
+export { isValidTransition, VALID_TRANSITIONS, type WorkItemStatus } from './state-machine.js';
+export {
+  createSprint,
+  createWorkItem,
+  type FsOps as SprintFactoryFsOps,
+  type SprintInput,
+  type WorkItemInput,
+  type Sprint,
+  type WorkItem,
+} from './sprint-factory.js';
