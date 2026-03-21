@@ -118,12 +118,5 @@ Where STATUS is one of: `IN-PROGRESS`, `REVIEW`, `BLOCKED`, `ERROR`, `SUGGESTION
 3. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "dev-N", "action": "<status>", "notes": "<summary>"}`
 4. Write the updated file back.
 
-### Activity Log
-Append to `.hive/logs/activity.jsonl` at every significant milestone:
-```json
-{"ts":"<ISO8601>","agent":"dev-N","action":"<action>","work_item":"WI-{id}","details":"<description>"}
-```
-Events: `TASK_START`, `COMMIT`, `REBASE`, `REVIEW_SUBMIT`, `CHANGES_ADDRESSED`, `BLOCKED`, `ERROR`.
-
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility.

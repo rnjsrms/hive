@@ -108,12 +108,5 @@ Where STATUS is one of: `TESTING`, `TESTS-PASS`, `TESTS-FAIL`, `BLOCKED`, `READY
 4. If TESTS-PASS, update `status` to `READY-TO-MERGE`.
 5. Write the updated file back.
 
-### Activity Log
-Append to `.hive/logs/activity.jsonl` for each test action:
-```json
-{"ts":"<ISO8601>","agent":"tester","action":"<action>","work_item":"WI-{id}","details":"<description>"}
-```
-Events: `TEST_START`, `TEST_WRITE`, `SUITE_RUN`, `TESTS_PASS`, `TESTS_FAIL`, `READY_TO_MERGE`.
-
 ### Gitflow Reminder
 You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`. Merging is the lead's responsibility. You report readiness — you do not merge.

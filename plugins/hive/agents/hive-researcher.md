@@ -94,12 +94,5 @@ Write to `.hive/research/{topic}.md` with the following structure:
 2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "researcher", "action": "RESEARCH_COMPLETE", "notes": "<summary>"}`
 3. Write the updated file back.
 
-### Activity Log
-Append to `.hive/logs/activity.jsonl` for each research action:
-```json
-{"ts":"<ISO8601>","agent":"researcher","action":"<action>","work_item":"WI-{id}","details":"<description>"}
-```
-Events: `RESEARCH_START`, `CODEBASE_SCAN`, `RESEARCH_COMPLETE`, `QUESTION_ANSWERED`.
-
 ### Gitflow Reminder
 You do NOT write application code or commit to any branch. You produce research documents in `.hive/research/`. You NEVER touch `main`, `master`, `develop`, `release/*`, or `hotfix/*`.

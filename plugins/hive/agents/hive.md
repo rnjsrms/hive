@@ -422,22 +422,18 @@ Process incoming messages and state changes in this order:
 2. Update work item `updated_at` timestamp.
 3. Append to work item `history`: `{"action": "SUBMITTED_FOR_REVIEW", "agent": "dev-{n}", "ts": "{ISO}", "notes": ""}`
 4. `SendMessage` to `[hive:reviewer]`: "Please review WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
-5. Log to `.hive/logs/activity.jsonl`.
 
 **When reviewer sends "APPROVED":**
 1. Reviewer has already set status to `APPROVED` — do not re-set it.
 2. `SendMessage` to `[hive:tester]`: "Please test WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
-3. Log to `.hive/logs/activity.jsonl`.
 
 **When reviewer sends "CHANGES-REQUESTED":**
 1. Reviewer has already set status to `CHANGES-REQUESTED` — do not re-set it.
 2. `SendMessage` to the original developer: "Changes requested on WI-{id}. Feedback: {details}. Please fix and resubmit."
-3. Log to `.hive/logs/activity.jsonl`.
 
 **When tester sends "TESTS-PASS":**
 1. Tester has already set status to `READY-TO-MERGE` — do not re-set it.
 2. Check if ALL work items in the convoy are `READY-TO-MERGE`.
-3. Log to `.hive/logs/activity.jsonl`.
 
 **When tester sends "TESTS-FAIL":**
 1. Update work item status to `TESTS-FAILED`.
@@ -489,7 +485,7 @@ Process incoming messages and state changes in this order:
 - Check `TaskList` and incoming `SendMessage` on every iteration.
 - If a worker is idle and work items are available, assign them.
 - If a worker has been unresponsive for >5 minutes, ping them.
-- Log every state transition to `.hive/logs/activity.jsonl`.
+- Activity logging is automatic via the `log-activity.sh` hook — no manual logging needed.
 - NEVER exit the loop until convoy status is `MERGED` or the user explicitly says to stop.
 
 ---
@@ -624,22 +620,27 @@ Each entry in `_index.json` must include at minimum:
 Health thresholds: `OK` (<5min since heartbeat), `STALE` (5-10min, ping agent), `DEAD` (>10min, kill and re-spawn).
 
 ### Activity Log Entry (activity.jsonl)
+Logged automatically by `log-activity.sh` hook when work-item files are written.
 ```json
 {
   "ts": "ISO 8601",
   "agent": "string",
   "action": "string",
-  "work_item": "wi-{number} | null",
-  "details": "string"
+  "work_item": "wi-{number}",
+  "status": "string",
+  "notes": "string"
 }
 ```
 
 ### Communications Log Entry (communications.jsonl)
+Logged automatically by `log-communication.sh` hook on SendMessage.
 ```json
 {
   "ts": "ISO 8601",
   "session_id": "string",
+  "from": "string",
   "to": "string",
+  "summary": "string",
   "message": "string"
 }
 ```
@@ -664,7 +665,7 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 
 2. **Workers never modify index, sequence, or convoy files.** Only the lead writes to `_index.json`, `_sequence.json`, and `convoy-*.json` files. Workers MAY directly update status and history on their assigned work item JSON file (`wi-*.json`).
 
-3. **Every state change is logged.** Every work item status transition, every review verdict, every test result, every assignment -- all logged to `.hive/logs/activity.jsonl`.
+3. **Every state change is logged via hooks.** Every work item status transition, every review verdict, every test result, every assignment -- all logged automatically via the `log-activity.sh` hook to `.hive/logs/activity.jsonl`. Agents do NOT need to manually append to activity logs.
 
 4. **No agent touches protected branches.** No direct pushes to `main`, `master`, or `develop`. All work goes through `feature/*` branches and merges are done by the lead after full review+test cycle.
 
