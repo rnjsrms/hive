@@ -114,7 +114,7 @@ describe('computeDelta', () => {
     expect(smaDelta?.delta).toBe(2);
   });
 
-  it('should include all 13 HiveMetrics fields in delta output', () => {
+  it('should include all 15 HiveMetrics numeric fields in delta output', () => {
     const m = makeMetrics();
     const deltas = computeDelta(m, m);
     const metricNames = deltas.map(d => d.metric).sort();
@@ -127,9 +127,11 @@ describe('computeDelta', () => {
       'quality.hardcodedStrings',
       'quality.scriptModuleAlignment',
       'quality.todos',
+      'scripts.total',
       'scripts.withErrorLogging',
       'scripts.withStdinInput',
       'tests.failed',
+      'tests.files',
       'tests.passed',
       'tests.total',
     ]);
