@@ -29,10 +29,16 @@ export {
   type WorkItemData,
 } from './sprint-factory.js';
 export {
+  getRequiredDirs,
+  getRequiredFiles,
+  validateStateFile,
+  validateWorkItemRefs,
   initializeHive,
   validateState,
   type FsOps as BootstrapFsOps,
   type InitResult,
+  type StateFileValidation,
+  type WorkItemRefValidation,
   type ValidationResult as BootstrapValidationResult,
   type ValidationWarning,
 } from './bootstrap.js';

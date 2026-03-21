@@ -12,6 +12,16 @@ export interface InitResult {
   files: string[];
 }
 
+export interface StateFileValidation {
+  valid: boolean;
+  errors: string[];
+}
+
+export interface WorkItemRefValidation {
+  valid: boolean;
+  danglingRefs: string[];
+}
+
 export interface ValidationWarning {
   file: string;
   message: string;
@@ -22,23 +32,54 @@ export interface ValidationResult {
   warnings: ValidationWarning[];
 }
 
-const REQUIRED_DIRS = [
-  'plans',
-  'research',
-  'work-items',
-  'sprints',
-  'agents',
-  'logs',
-  'archive',
-];
+/**
+ * Returns the list of required .hive/ subdirectories.
+ */
+export function getRequiredDirs(): string[] {
+  return ['plans', 'research', 'work-items', 'sprints', 'agents', 'logs', 'archive'];
+}
 
-const STATE_FILES: Record<string, string> = {
-  'work-items/_index.json': '{"items":[]}',
-  'work-items/_sequence.json': '{"next_id":1}',
-  'sprints/_index.json': '{"items":[]}',
-  'sprints/_sequence.json': '{"next_id":1}',
-  'agents/_index.json': '{"agents":[]}',
-};
+/**
+ * Returns a map of required state files and their initial JSON content.
+ */
+export function getRequiredFiles(): Record<string, object> {
+  return {
+    'work-items/_index.json': { items: [] },
+    'work-items/_sequence.json': { next_id: 1 },
+    'sprints/_index.json': { items: [] },
+    'sprints/_sequence.json': { next_id: 1 },
+    'agents/_index.json': { agents: [] },
+  };
+}
+
+/**
+ * Validates that a string is parseable JSON.
+ */
+export function validateStateFile(content: string): StateFileValidation {
+  const errors: string[] = [];
+  try {
+    const parsed = JSON.parse(content);
+    if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      errors.push('Content is not a JSON object');
+    }
+  } catch (e) {
+    errors.push(`Invalid JSON: ${(e as Error).message}`);
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Checks that all WI IDs in a sprint's work_items array exist in the given list.
+ */
+export function validateWorkItemRefs(
+  sprintData: { work_items?: string[] },
+  existingWiIds: string[],
+): WorkItemRefValidation {
+  const workItems = sprintData.work_items || [];
+  const existingSet = new Set(existingWiIds);
+  const danglingRefs = workItems.filter(id => !existingSet.has(id));
+  return { valid: danglingRefs.length === 0, danglingRefs };
+}
 
 const LOG_FILES = [
   'logs/activity.jsonl',
@@ -48,6 +89,9 @@ const LOG_FILES = [
 
 const GITKEEP_DIRS = ['plans', 'research', 'archive'];
 
+/**
+ * Initializes a .hive/ directory with all required structure and state files.
+ */
 export function initializeHive(rootDir: string, fs: FsOps): InitResult {
   const hiveDir = `${rootDir}/.hive`;
 
@@ -58,15 +102,15 @@ export function initializeHive(rootDir: string, fs: FsOps): InitResult {
   const directories: string[] = [];
   const files: string[] = [];
 
-  for (const dir of REQUIRED_DIRS) {
+  for (const dir of getRequiredDirs()) {
     const path = `${hiveDir}/${dir}`;
     fs.mkdirSync(path, { recursive: true });
     directories.push(dir);
   }
 
-  for (const [file, content] of Object.entries(STATE_FILES)) {
+  for (const [file, content] of Object.entries(getRequiredFiles())) {
     const path = `${hiveDir}/${file}`;
-    fs.writeFileSync(path, content);
+    fs.writeFileSync(path, JSON.stringify(content));
     files.push(file);
   }
 
@@ -85,6 +129,9 @@ export function initializeHive(rootDir: string, fs: FsOps): InitResult {
   return { created: true, directories, files };
 }
 
+/**
+ * Validates an existing .hive/ directory's state integrity.
+ */
 export function validateState(rootDir: string, fs: FsOps): ValidationResult {
   const hiveDir = `${rootDir}/.hive`;
   const warnings: ValidationWarning[] = [];
@@ -93,29 +140,20 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
     return { valid: false, warnings: [{ file: '.hive', message: 'Directory does not exist' }] };
   }
 
-  // Validate JSON files: _index.json, _sequence.json
-  const jsonFiles = [
-    'work-items/_index.json',
-    'work-items/_sequence.json',
-    'sprints/_index.json',
-    'sprints/_sequence.json',
-    'agents/_index.json',
-  ];
-
-  for (const file of jsonFiles) {
+  // Validate required JSON state files
+  for (const file of Object.keys(getRequiredFiles())) {
     const path = `${hiveDir}/${file}`;
     if (!fs.existsSync(path)) {
       warnings.push({ file, message: 'File missing' });
       continue;
     }
-    try {
-      JSON.parse(fs.readFileSync(path, 'utf8'));
-    } catch {
-      warnings.push({ file, message: 'Invalid JSON' });
+    const result = validateStateFile(fs.readFileSync(path, 'utf8'));
+    if (!result.valid) {
+      warnings.push({ file, message: result.errors[0] });
     }
   }
 
-  // Validate sprint files
+  // Validate sprint files and cross-references
   const sprintsDir = `${hiveDir}/sprints`;
   if (fs.existsSync(sprintsDir)) {
     const sprintFiles = fs.readdirSync(sprintsDir).filter(f => f.startsWith('sprint-') && f.endsWith('.json'));
@@ -123,13 +161,16 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
       const path = `${sprintsDir}/${file}`;
       try {
         const sprint = JSON.parse(fs.readFileSync(path, 'utf8'));
-        // Cross-reference: verify each WI in work_items exists
-        const workItems: string[] = sprint.work_items || [];
-        for (const wiId of workItems) {
-          const wiPath = `${hiveDir}/work-items/${wiId}.json`;
-          if (!fs.existsSync(wiPath)) {
-            warnings.push({ file: `sprints/${file}`, message: `References missing work item: ${wiId}` });
-          }
+        // Collect existing WI IDs for cross-reference check
+        const wiDir = `${hiveDir}/work-items`;
+        const existingWiIds = fs.existsSync(wiDir)
+          ? fs.readdirSync(wiDir)
+              .filter(f => f.startsWith('wi-') && f.endsWith('.json'))
+              .map(f => f.replace('.json', ''))
+          : [];
+        const refResult = validateWorkItemRefs(sprint, existingWiIds);
+        for (const ref of refResult.danglingRefs) {
+          warnings.push({ file: `sprints/${file}`, message: `References missing work item: ${ref}` });
         }
       } catch {
         warnings.push({ file: `sprints/${file}`, message: 'Invalid JSON' });
@@ -137,7 +178,7 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
     }
   }
 
-  // Validate work item files
+  // Check for duplicate work item IDs
   const wiDir = `${hiveDir}/work-items`;
   if (fs.existsSync(wiDir)) {
     const wiFiles = fs.readdirSync(wiDir).filter(f => f.startsWith('wi-') && f.endsWith('.json'));

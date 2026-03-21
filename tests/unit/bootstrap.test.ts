@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  getRequiredDirs,
+  getRequiredFiles,
+  validateStateFile,
+  validateWorkItemRefs,
   initializeHive,
   validateState,
   type FsOps,
@@ -39,6 +43,156 @@ function createMockFs(): FsOps & { files: Record<string, string>; dirs: Set<stri
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// getRequiredDirs
+// ---------------------------------------------------------------------------
+
+describe('getRequiredDirs', () => {
+  it('returns all 7 required directories', () => {
+    const dirs = getRequiredDirs();
+    expect(dirs).toHaveLength(7);
+    expect(dirs).toContain('plans');
+    expect(dirs).toContain('research');
+    expect(dirs).toContain('work-items');
+    expect(dirs).toContain('sprints');
+    expect(dirs).toContain('agents');
+    expect(dirs).toContain('logs');
+    expect(dirs).toContain('archive');
+  });
+
+  it('returns a new array each call (no shared mutation)', () => {
+    const a = getRequiredDirs();
+    const b = getRequiredDirs();
+    expect(a).toEqual(b);
+    expect(a).not.toBe(b);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getRequiredFiles
+// ---------------------------------------------------------------------------
+
+describe('getRequiredFiles', () => {
+  it('returns 5 required state files', () => {
+    const files = getRequiredFiles();
+    expect(Object.keys(files)).toHaveLength(5);
+  });
+
+  it('includes work-items index and sequence', () => {
+    const files = getRequiredFiles();
+    expect(files['work-items/_index.json']).toEqual({ items: [] });
+    expect(files['work-items/_sequence.json']).toEqual({ next_id: 1 });
+  });
+
+  it('includes sprints index and sequence', () => {
+    const files = getRequiredFiles();
+    expect(files['sprints/_index.json']).toEqual({ items: [] });
+    expect(files['sprints/_sequence.json']).toEqual({ next_id: 1 });
+  });
+
+  it('includes agents index', () => {
+    const files = getRequiredFiles();
+    expect(files['agents/_index.json']).toEqual({ agents: [] });
+  });
+
+  it('all values are valid JSON-serializable objects', () => {
+    const files = getRequiredFiles();
+    for (const [, value] of Object.entries(files)) {
+      expect(typeof value).toBe('object');
+      expect(() => JSON.stringify(value)).not.toThrow();
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateStateFile
+// ---------------------------------------------------------------------------
+
+describe('validateStateFile', () => {
+  it('returns valid for correct JSON object', () => {
+    expect(validateStateFile('{"items":[]}')).toEqual({ valid: true, errors: [] });
+  });
+
+  it('returns valid for JSON with nested data', () => {
+    expect(validateStateFile('{"a":{"b":1},"c":[1,2]}')).toEqual({ valid: true, errors: [] });
+  });
+
+  it('returns invalid for malformed JSON', () => {
+    const result = validateStateFile('{bad json');
+    expect(result.valid).toBe(false);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]).toMatch(/Invalid JSON/);
+  });
+
+  it('returns invalid for empty string', () => {
+    const result = validateStateFile('');
+    expect(result.valid).toBe(false);
+  });
+
+  it('returns invalid for JSON array (not an object)', () => {
+    const result = validateStateFile('[1,2,3]');
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('not a JSON object');
+  });
+
+  it('returns invalid for JSON primitive', () => {
+    const result = validateStateFile('"hello"');
+    expect(result.valid).toBe(false);
+  });
+
+  it('returns invalid for null', () => {
+    const result = validateStateFile('null');
+    expect(result.valid).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// validateWorkItemRefs
+// ---------------------------------------------------------------------------
+
+describe('validateWorkItemRefs', () => {
+  it('returns valid when all refs exist', () => {
+    const result = validateWorkItemRefs(
+      { work_items: ['wi-1', 'wi-2'] },
+      ['wi-1', 'wi-2', 'wi-3'],
+    );
+    expect(result.valid).toBe(true);
+    expect(result.danglingRefs).toHaveLength(0);
+  });
+
+  it('returns dangling refs for missing work items', () => {
+    const result = validateWorkItemRefs(
+      { work_items: ['wi-1', 'wi-2', 'wi-3'] },
+      ['wi-1'],
+    );
+    expect(result.valid).toBe(false);
+    expect(result.danglingRefs).toEqual(['wi-2', 'wi-3']);
+  });
+
+  it('returns valid for empty work_items array', () => {
+    const result = validateWorkItemRefs({ work_items: [] }, ['wi-1']);
+    expect(result.valid).toBe(true);
+    expect(result.danglingRefs).toHaveLength(0);
+  });
+
+  it('returns valid when work_items field is missing', () => {
+    const result = validateWorkItemRefs({}, ['wi-1']);
+    expect(result.valid).toBe(true);
+    expect(result.danglingRefs).toHaveLength(0);
+  });
+
+  it('returns valid for empty existing IDs with empty refs', () => {
+    const result = validateWorkItemRefs({ work_items: [] }, []);
+    expect(result.valid).toBe(true);
+  });
+
+  it('returns all refs as dangling when existing IDs is empty', () => {
+    const result = validateWorkItemRefs({ work_items: ['wi-1'] }, []);
+    expect(result.valid).toBe(false);
+    expect(result.danglingRefs).toEqual(['wi-1']);
+  });
+});
 
 // ---------------------------------------------------------------------------
 // initializeHive
@@ -152,10 +306,9 @@ describe('validateState', () => {
     fs.files['/project/.hive/sprints/_index.json'] = '{bad json';
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
-    expect(result.warnings).toContainEqual({
-      file: 'sprints/_index.json',
-      message: 'Invalid JSON',
-    });
+    const warning = result.warnings.find(w => w.file === 'sprints/_index.json');
+    expect(warning).toBeDefined();
+    expect(warning!.message).toMatch(/Invalid JSON/);
   });
 
   it('warns on invalid JSON in sprint files', () => {
