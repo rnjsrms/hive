@@ -167,7 +167,6 @@ Hive uses Claude Code hooks (configured in `plugins/hive/hooks/hooks.json`) to:
 - **Log task changes** (create/update) to `task-ledger.jsonl`
 - **Auto-commit** `.hive/` state changes to git after each write
 - **Validate completion** ensuring work items pass review and testing
-- **Check idle work** prompting idle agents to pick up unassigned items
 - **Send notifications** via Windows desktop notifications
 
 ### Hook Debugging Tips

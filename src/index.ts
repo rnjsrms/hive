@@ -8,7 +8,6 @@
 export { buildCommunicationEntry, type CommunicationEntry } from './log-communication.js';
 export { buildTaskChangeEntry, type TaskChangeEntry } from './log-task-change.js';
 export { shouldAutoCommit } from './auto-commit.js';
-export { checkForIdleWork } from './check-idle-work.js';
 export {
   extractWorkItemId,
   validateCompletion,

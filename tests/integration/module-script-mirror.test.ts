@@ -13,7 +13,6 @@ import * as os from 'os';
 import { buildCommunicationEntry } from '../../src/log-communication.js';
 import { buildTaskChangeEntry } from '../../src/log-task-change.js';
 import { shouldAutoCommit } from '../../src/auto-commit.js';
-import { checkForIdleWork } from '../../src/check-idle-work.js';
 import { validateCompletion, type FsOps } from '../../src/validate-completion.js';
 
 const hasBash = (() => {
@@ -124,45 +123,6 @@ describeIf('module-script mirror: auto-commit', () => {
     // we verify the module matches expected behavior instead.
     expect(shouldAutoCommit(hivePath)).toBe(true);
     expect(shouldAutoCommit(nonHivePath)).toBe(false);
-  });
-});
-
-describeIf('module-script mirror: check-idle-work', () => {
-  it('should agree on unassigned item detection', () => {
-    const withUnassigned = JSON.stringify({
-      items: [{ status: 'open', assignee: null }],
-    });
-    const allAssigned = JSON.stringify({
-      items: [{ status: 'open', assignee: 'dev-1' }],
-    });
-
-    // Module results
-    expect(checkForIdleWork(withUnassigned)).toBe('found');
-    expect(checkForIdleWork(allAssigned)).toBe('none');
-
-    // Script results
-    const runScript = (indexContent: string): number => {
-      const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-mirror-'));
-      const wiDir = path.join(tmpDir, '.hive', 'work-items');
-      fs.mkdirSync(wiDir, { recursive: true });
-      fs.writeFileSync(path.join(wiDir, '_index.json'), indexContent);
-      try {
-        execSync(`bash "${path.join(SCRIPTS_DIR, 'check-idle-work.sh')}"`, {
-          env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
-          stdio: ['pipe', 'pipe', 'pipe'],
-          timeout: 10000,
-        });
-        return 0;
-      } catch (e: any) {
-        return e.status;
-      } finally {
-        fs.rmSync(tmpDir, { recursive: true, force: true });
-      }
-    };
-
-    // exit 2 = found unassigned, exit 0 = none
-    expect(runScript(withUnassigned)).toBe(2);
-    expect(runScript(allAssigned)).toBe(0);
   });
 });
 
