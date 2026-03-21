@@ -167,10 +167,13 @@ describeIf('module-script mirror: check-idle-work', () => {
 });
 
 describeIf('module-script mirror: validate-completion', () => {
-  it('should agree: valid WI (ready-to-merge + TESTS_PASS) → module valid, script exit 0', () => {
+  it('should agree: valid WI (ready-to-merge + TESTS_PASS + APPROVED) → module valid, script exit 0', () => {
     const wi = JSON.stringify({
       status: 'ready-to-merge',
-      history: [{ action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' }],
+      history: [
+        { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
+        { action: 'APPROVED', agent: 'reviewer', ts: '2026-01-01T00:00:00Z' },
+      ],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
 

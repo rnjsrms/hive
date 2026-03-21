@@ -27,6 +27,13 @@ if [ ! -d "$PROJ_DIR/.hive" ]; then
 fi
 ```
 
+Also verify git is available:
+```bash
+if ! git rev-parse --is-inside-work-tree 2>/dev/null; then
+  echo "WARNING: Not inside a git repository. Hive requires git for branch management and auto-commits."
+fi
+```
+
 ### 1B. If .hive/ does NOT exist -- create everything
 
 Execute the following steps in order. Do NOT skip any step.
@@ -48,9 +55,12 @@ mkdir -p "$PROJ_DIR/.hive/archive"
 
 Write these files using the Write tool:
 
-`.hive/config.json` (auto-detect base branch with `git rev-parse --abbrev-ref HEAD`):
+`.hive/config.json` (auto-detect base branch):
+```bash
+BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "master")
+```
 ```json
-{"name": "hive", "version": "1.3.1", "base_branch": "master"}
+{"name": "hive", "version": "1.3.2", "base_branch": "$BASE_BRANCH"}
 ```
 
 `.hive/work-items/_index.json`:
@@ -85,6 +95,11 @@ touch "$PROJ_DIR/.hive/logs/communications.jsonl"
 touch "$PROJ_DIR/.hive/logs/task-ledger.jsonl"
 touch "$PROJ_DIR/.hive/logs/decisions.jsonl"
 touch "$PROJ_DIR/.hive/logs/autoresearch.jsonl"
+```
+
+`.hive/metrics.json`:
+```json
+{"autoresearch_status": "idle", "autoresearch_started_at": null, "consecutive_reverts": 0}
 ```
 
 Create `.gitkeep` files for empty directories:
@@ -402,7 +417,7 @@ OPEN → ASSIGNED → IN-PROGRESS → REVIEW → APPROVED → TESTING → READY-
                        |            v                    v
                        +-- CHANGES-REQUESTED        TESTS-FAILED
                        |                                |
-                       +--------- BLOCKED --------------+
+                       +--- BLOCKED (→ IN-PROGRESS) ----+
 
 CANCELLED ← (from any state)
 ```
@@ -704,7 +719,7 @@ When this agent is invoked, execute the following in order:
 Begin by saying:
 
 ```
-[hive:lead] Hive Orchestration System v1.3.1
+[hive:lead] Hive Orchestration System v1.3.2
 Initializing workspace...
 ```
 
