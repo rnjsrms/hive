@@ -81,8 +81,8 @@ describe('validateCompletion', () => {
   }
 
   const validWi = JSON.stringify({
-    status: 'ready-to-merge',
-    history: [{ action: 'TESTS_PASS' }],
+    status: 'READY_TO_MERGE',
+    history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
   });
 
   it('should return valid for input with no work item id', () => {
@@ -101,26 +101,26 @@ describe('validateCompletion', () => {
     expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
-  it('should return valid for work item with status done and TESTS_PASS', () => {
+  it('should return valid for work item with status done and TESTS_PASS and APPROVED', () => {
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': validWi });
     expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
-  it('should return valid for status ready-to-merge', () => {
+  it('should return valid for status READY_TO_MERGE with APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'ready-to-merge',
-      history: [{ action: 'TESTS_PASS' }],
+      status: 'READY_TO_MERGE',
+      history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
-  it('should return valid for status merged', () => {
+  it('should return valid for status MERGED with APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'merged',
-      history: [{ action: 'TESTS_PASS' }],
+      status: 'MERGED',
+      history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
@@ -129,7 +129,7 @@ describe('validateCompletion', () => {
 
   it('should report error for invalid status', () => {
     const wi = JSON.stringify({
-      status: 'in-progress',
+      status: 'IN_PROGRESS',
       history: [{ action: 'TESTS_PASS' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
@@ -137,7 +137,7 @@ describe('validateCompletion', () => {
     const result = validateCompletion(input, '/wi', fs);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain(
-      'Work item status is "in-progress", must be "ready-to-merge" or "merged"'
+      'Work item status is "IN_PROGRESS", must be "READY_TO_MERGE" or "MERGED"'
     );
   });
 
@@ -147,12 +147,12 @@ describe('validateCompletion', () => {
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     const result = validateCompletion(input, '/wi', fs);
     expect(result.valid).toBe(false);
-    expect(result.errors[0]).toContain('must be "ready-to-merge"');
+    expect(result.errors[0]).toContain('must be "READY_TO_MERGE"');
   });
 
   it('should report error for missing TESTS_PASS', () => {
     const wi = JSON.stringify({
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       history: [{ action: 'REVIEWED' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
@@ -163,7 +163,7 @@ describe('validateCompletion', () => {
   });
 
   it('should report error for missing TESTS_PASS with empty history', () => {
-    const wi = JSON.stringify({ status: 'ready-to-merge', history: [] });
+    const wi = JSON.stringify({ status: 'READY_TO_MERGE', history: [] });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     const result = validateCompletion(input, '/wi', fs);
@@ -171,9 +171,9 @@ describe('validateCompletion', () => {
     expect(result.errors).toContain('Missing tester TESTS_PASS entry in history');
   });
 
-  it('should report error for high-risk item missing APPROVED', () => {
+  it('should report error for any item missing APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'high',
       history: [{ action: 'TESTS_PASS' }],
     });
@@ -181,12 +181,12 @@ describe('validateCompletion', () => {
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     const result = validateCompletion(input, '/wi', fs);
     expect(result.valid).toBe(false);
-    expect(result.errors).toContain('High-risk item missing reviewer APPROVED entry in history');
+    expect(result.errors).toContain('Missing reviewer APPROVED entry in history');
   });
 
   it('should pass for high-risk item with APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'high',
       history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
     });
@@ -195,11 +195,24 @@ describe('validateCompletion', () => {
     expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
-  it('should not require APPROVED for non-high-risk items', () => {
+  it('should reject low-risk item without APPROVED', () => {
     const wi = JSON.stringify({
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'low',
       history: [{ action: 'TESTS_PASS' }],
+    });
+    const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
+    const fs = makeFsOps({ '/wi/WI-1.json': wi });
+    const result = validateCompletion(input, '/wi', fs);
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContain('Missing reviewer APPROVED entry in history');
+  });
+
+  it('should pass for low-risk item with APPROVED', () => {
+    const wi = JSON.stringify({
+      status: 'READY_TO_MERGE',
+      risk: 'low',
+      history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
@@ -219,33 +232,45 @@ describe('validateCompletion', () => {
     expect(result.errors).toHaveLength(3);
   });
 
-  it('should find work item file by case-insensitive match in directory', () => {
+  it('should find work item file by exact lowercase match in directory', () => {
     const wi = JSON.stringify({
-      status: 'ready-to-merge',
-      history: [{ action: 'TESTS_PASS' }],
+      status: 'READY_TO_MERGE',
+      history: [{ action: 'TESTS_PASS' }, { action: 'APPROVED' }],
     });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs: FsOps = {
       existsSync: (path: string) => {
         if (path === '/wi/WI-1.json') return false;
-        return path === '/wi/wi-1-feature.json';
+        return path === '/wi/wi-1.json';
       },
-      readdirSync: () => ['wi-1-feature.json', '_index.json'],
+      readdirSync: () => ['wi-1.json', '_index.json'],
       readFileSync: (path: string) => {
-        if (path === '/wi/wi-1-feature.json') return wi;
+        if (path === '/wi/wi-1.json') return wi;
         throw new Error('ENOENT');
       },
     };
     expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
-  it('should skip files starting with underscore in directory scan', () => {
+  it('should NOT match wi-1 against wi-10 (exact matching)', () => {
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs: FsOps = {
       existsSync: () => false,
-      readdirSync: () => ['_WI-1-backup.json'],
+      readdirSync: () => ['wi-10.json', 'wi-11.json'],
       readFileSync: () => { throw new Error('ENOENT'); },
     };
+    // wi-1 should NOT match wi-10.json — exact match only
+    expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
+  });
+
+  it('should not match partial filenames in directory scan', () => {
+    const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
+    const fs: FsOps = {
+      existsSync: () => false,
+      readdirSync: () => ['wi-1-feature.json', '_WI-1-backup.json'],
+      readFileSync: () => { throw new Error('ENOENT'); },
+    };
+    // wi-1-feature.json is NOT an exact match for wi-1.json
     expect(validateCompletion(input, '/wi', fs)).toEqual({ valid: true, errors: [] });
   });
 
@@ -266,11 +291,12 @@ describe('validateCompletion', () => {
   });
 
   it('should handle missing history key', () => {
-    const wi = JSON.stringify({ status: 'ready-to-merge' });
+    const wi = JSON.stringify({ status: 'READY_TO_MERGE' });
     const input = JSON.stringify({ tool_input: { id: 'WI-1' } });
     const fs = makeFsOps({ '/wi/WI-1.json': wi });
     const result = validateCompletion(input, '/wi', fs);
     expect(result.valid).toBe(false);
     expect(result.errors).toContain('Missing tester TESTS_PASS entry in history');
+    expect(result.errors).toContain('Missing reviewer APPROVED entry in history');
   });
 });

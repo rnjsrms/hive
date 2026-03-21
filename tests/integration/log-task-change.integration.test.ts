@@ -77,8 +77,8 @@ describeIf('log-task-change.sh integration', () => {
     expect(entry.input.status).toBe('completed');
   });
 
-  it('should truncate tool_output longer than 2000 characters', () => {
-    const longOutput = 'z'.repeat(3000);
+  it('should preserve full tool_output without truncation', () => {
+    const longOutput = 'z'.repeat(5000);
     const input = {
       tool_name: 'TaskCreate',
       tool_input: { subject: 'test' },
@@ -94,8 +94,8 @@ describeIf('log-task-change.sh integration', () => {
 
     const logFile = path.join(tmpDir, '.hive', 'logs', 'task-ledger.jsonl');
     const entry = JSON.parse(fs.readFileSync(logFile, 'utf8').trim());
-    expect(entry.output.length).toBeLessThanOrEqual(2000 + '...[truncated]'.length);
-    expect(entry.output).toContain('...[truncated]');
+    expect(entry.output).toHaveLength(5000);
+    expect(entry.output).not.toContain('...[truncated]');
   });
 
   it('should handle invalid JSON input gracefully (exit 0)', () => {

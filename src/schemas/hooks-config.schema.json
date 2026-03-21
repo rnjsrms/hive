@@ -6,7 +6,6 @@
     "hooks": { "type": "object", "properties": {
       "PostToolUse": { "type": "array" },
       "TaskCompleted": { "type": "array" },
-      "TeammateIdle": { "type": "array" },
       "Notification": { "type": "array" }
     }}
   },

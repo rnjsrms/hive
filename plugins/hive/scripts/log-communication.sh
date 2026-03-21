@@ -15,12 +15,18 @@ try {
   let message = (data.tool_input || {}).message || '';
   // Stringify if message is a structured object (e.g., protocol messages)
   if (typeof message === 'object') message = JSON.stringify(message);
-  // Truncate to 1000 chars to prevent log bloat
-  if (message.length > 1000) message = message.substring(0, 1000) + '...[truncated]';
+  // Safety ceiling to prevent unbounded log growth
+  if (message.length > 100000) message = message.substring(0, 100000) + '...[safety-truncated]';
+  // Parse sender identity from [hive:xxx] tag in message content
+  const fromMatch = typeof message === 'string' ? message.match(/\[hive:([^\]]+)\]/) : null;
+  const from = fromMatch ? fromMatch[1] : '';
+  const summary = (data.tool_input || {}).summary || '';
   const entry = {
     ts: new Date().toISOString(),
     session_id: data.session_id || '',
+    from: from,
     to: (data.tool_input || {}).to || '',
+    summary: summary,
     message: message
   };
   fs.appendFileSync(logDir + '/communications.jsonl', JSON.stringify(entry) + '\n');

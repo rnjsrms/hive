@@ -8,17 +8,10 @@
 export { buildCommunicationEntry, type CommunicationEntry } from './log-communication.js';
 export { buildTaskChangeEntry, type TaskChangeEntry } from './log-task-change.js';
 export { shouldAutoCommit } from './auto-commit.js';
-export { checkForIdleWork } from './check-idle-work.js';
 export {
   extractWorkItemId,
   validateCompletion,
   type FsOps,
   type ValidationResult,
 } from './validate-completion.js';
-export {
-  computeDelta,
-  hasRegression,
-  formatDeltaSummary,
-  type HiveMetrics,
-  type MetricsDelta,
-} from './metrics.js';
+export { buildActivityEntry, type ActivityEntry } from './log-activity.js';

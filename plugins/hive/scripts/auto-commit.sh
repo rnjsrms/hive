@@ -9,7 +9,7 @@ const fs = require('fs');
 try {
   const data = JSON.parse(fs.readFileSync(0, 'utf8'));
   const path = (data.tool_input || {}).file_path || '';
-  console.log(path.includes('.hive/') || path.includes('.hive\\\\') ? 'yes' : 'no');
+  console.log(/\.hive[\\/\\\\]/.test(path) ? 'yes' : 'no');
 } catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); console.log('no'); }
 " 2>/dev/null || echo "no")
 

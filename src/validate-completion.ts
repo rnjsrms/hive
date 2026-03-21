@@ -37,7 +37,7 @@ export function validateCompletion(
   let wiFile = `${wiDir}/${wiId}.json`;
   if (!fs.existsSync(wiFile)) {
     const files = fs.readdirSync(wiDir).filter(
-      (f: string) => f.toLowerCase().includes(wiId!.toLowerCase()) && !f.startsWith('_')
+      (f: string) => f === wiId!.toLowerCase() + '.json'
     );
     if (files.length > 0) wiFile = `${wiDir}/${files[0]}`;
     else return { valid: true, errors: [] };
@@ -47,16 +47,16 @@ export function validateCompletion(
     const wi = JSON.parse(fs.readFileSync(wiFile, 'utf8'));
     const errors: string[] = [];
 
-    const validStatuses = ['ready-to-merge', 'merged'];
+    const validStatuses = ['READY_TO_MERGE', 'MERGED'];
     if (!validStatuses.includes(wi.status || ''))
-      errors.push(`Work item status is "${wi.status || ''}", must be "ready-to-merge" or "merged"`);
+      errors.push(`Work item status is "${wi.status || ''}", must be "READY_TO_MERGE" or "MERGED"`);
 
     const history: Array<{ action?: string }> = wi.history || [];
     if (!history.some((h) => h.action === 'TESTS_PASS'))
       errors.push('Missing tester TESTS_PASS entry in history');
 
-    if (wi.risk === 'high' && !history.some((h) => h.action === 'APPROVED'))
-      errors.push('High-risk item missing reviewer APPROVED entry in history');
+    if (!history.some((h) => h.action === 'APPROVED'))
+      errors.push('Missing reviewer APPROVED entry in history');
 
     return { valid: errors.length === 0, errors };
   } catch {

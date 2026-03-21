@@ -2,7 +2,7 @@ export function shouldAutoCommit(inputJson: string): boolean {
   try {
     const data = JSON.parse(inputJson);
     const filePath = (data.tool_input || {}).file_path || '';
-    return filePath.includes('.hive/') || filePath.includes('.hive\\');
+    return /\.hive[/\\]/.test(filePath);
   } catch {
     return false;
   }

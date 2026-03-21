@@ -37,8 +37,8 @@ describe('buildTaskChangeEntry', () => {
     expect(result!.output).toBe('{"id":"5","ok":true}');
   });
 
-  it('should truncate output longer than 2000 characters', () => {
-    const longOutput = 'z'.repeat(2500);
+  it('should preserve full output without truncation', () => {
+    const longOutput = 'z'.repeat(5000);
     const input = JSON.stringify({
       tool_name: 'TaskGet',
       tool_input: {},
@@ -46,33 +46,8 @@ describe('buildTaskChangeEntry', () => {
     });
     const result = buildTaskChangeEntry(input);
     expect(result).not.toBeNull();
-    expect(result!.output).toHaveLength(2000 + '...[truncated]'.length);
-    expect(result!.output.endsWith('...[truncated]')).toBe(true);
-  });
-
-  it('should not truncate output exactly 2000 characters', () => {
-    const exactOutput = 'y'.repeat(2000);
-    const input = JSON.stringify({
-      tool_name: 'TaskGet',
-      tool_input: {},
-      tool_output: exactOutput,
-    });
-    const result = buildTaskChangeEntry(input);
-    expect(result).not.toBeNull();
-    expect(result!.output).toHaveLength(2000);
+    expect(result!.output).toHaveLength(5000);
     expect(result!.output).not.toContain('...[truncated]');
-  });
-
-  it('should truncate output of 2001 characters', () => {
-    const output = 'w'.repeat(2001);
-    const input = JSON.stringify({
-      tool_name: 'TaskGet',
-      tool_input: {},
-      tool_output: output,
-    });
-    const result = buildTaskChangeEntry(input);
-    expect(result).not.toBeNull();
-    expect(result!.output.endsWith('...[truncated]')).toBe(true);
   });
 
   it('should default tool to empty string when missing', () => {

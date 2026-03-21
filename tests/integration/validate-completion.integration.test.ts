@@ -45,13 +45,14 @@ describeIf('validate-completion.sh integration', () => {
     expect(result).toBeDefined();
   });
 
-  it('should exit 0 for WI with ready-to-merge status and TESTS_PASS in history', () => {
+  it('should exit 0 for WI with READY_TO_MERGE status and TESTS_PASS and APPROVED in history', () => {
     const wi = {
       id: 'WI-1',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'low',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
+        { action: 'APPROVED', agent: 'reviewer', ts: '2026-01-01T00:00:00Z' },
       ],
     };
     fs.writeFileSync(path.join(wiDir, 'WI-1.json'), JSON.stringify(wi));
@@ -67,10 +68,10 @@ describeIf('validate-completion.sh integration', () => {
     expect(result).toBeDefined();
   });
 
-  it('should exit 2 when WI has in-progress status', () => {
+  it('should exit 2 when WI has IN_PROGRESS status', () => {
     const wi = {
       id: 'WI-2',
-      status: 'in-progress',
+      status: 'IN_PROGRESS',
       risk: 'low',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -97,7 +98,7 @@ describeIf('validate-completion.sh integration', () => {
   it('should exit 2 when WI has no TESTS_PASS in history', () => {
     const wi = {
       id: 'WI-3',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'low',
       history: [
         { action: 'started', agent: 'dev-1', ts: '2026-01-01T00:00:00Z' },
@@ -124,7 +125,7 @@ describeIf('validate-completion.sh integration', () => {
   it('should exit 2 for high-risk WI without APPROVED in history', () => {
     const wi = {
       id: 'WI-4',
-      status: 'ready-to-merge',
+      status: 'READY_TO_MERGE',
       risk: 'high',
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -146,6 +147,53 @@ describeIf('validate-completion.sh integration', () => {
       // Script exits 2 when high-risk item lacks APPROVED; stderr suppressed by 2>/dev/null
       expect(e.status).toBe(2);
     }
+  });
+
+  it('should exit 2 for low-risk WI without APPROVED in history', () => {
+    const wi = {
+      id: 'WI-6',
+      status: 'READY_TO_MERGE',
+      risk: 'low',
+      history: [
+        { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
+      ],
+    };
+    fs.writeFileSync(path.join(wiDir, 'WI-6.json'), JSON.stringify(wi));
+
+    const input = { tool_input: { id: 'WI-6' } };
+    const scriptPath = path.join(SCRIPTS_DIR, 'validate-completion.sh');
+    try {
+      execSync(`bash "${scriptPath}"`, {
+        input: JSON.stringify(input),
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+      expect.unreachable('Expected exit code 2');
+    } catch (e: any) {
+      expect(e.status).toBe(2);
+    }
+  });
+
+  it('should not match WI-1 against WI-10 file (exact matching)', () => {
+    const wi10 = {
+      id: 'WI-10',
+      status: 'IN_PROGRESS',
+      risk: 'low',
+      history: [],
+    };
+    fs.writeFileSync(path.join(wiDir, 'WI-10.json'), JSON.stringify(wi10));
+
+    const input = { tool_input: { id: 'WI-1' } };
+    const scriptPath = path.join(SCRIPTS_DIR, 'validate-completion.sh');
+    // WI-1 does not exist, and WI-10 should NOT be matched — exit 0 (skip)
+    const result = execSync(`bash "${scriptPath}"`, {
+      input: JSON.stringify(input),
+      env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+      stdio: ['pipe', 'pipe', 'pipe'],
+      timeout: 10000,
+    });
+    expect(result).toBeDefined();
   });
 
   it('should exit 0 gracefully when WI file has parse error', () => {

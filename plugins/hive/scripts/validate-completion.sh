@@ -27,7 +27,7 @@ try {
 
   let wiFile = path.join(wiDir, wiId + '.json');
   if (!fs.existsSync(wiFile)) {
-    const files = fs.readdirSync(wiDir).filter(f => f.includes(wiId) && !f.startsWith('_'));
+    const files = fs.readdirSync(wiDir).filter(f => f === wiId.toLowerCase() + '.json');
     if (files.length > 0) wiFile = path.join(wiDir, files[0]);
     else process.exit(0);
   }
@@ -36,15 +36,15 @@ try {
   const errors = [];
 
   // Valid WI statuses that indicate completion gates have been reached
-  const validStatuses = ['ready-to-merge', 'merged'];
+  const validStatuses = ['READY_TO_MERGE', 'MERGED'];
   if (!validStatuses.includes(wi.status || ''))
-    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"ready-to-merge\" or \"merged\"');
+    errors.push('Work item status is \"' + (wi.status || '') + '\", must be \"READY_TO_MERGE\" or \"MERGED\"');
 
   const history = wi.history || [];
   if (!history.some(h => h.action === 'TESTS_PASS'))
     errors.push('Missing tester TESTS_PASS entry in history');
-  if (wi.risk === 'high' && !history.some(h => h.action === 'APPROVED'))
-    errors.push('High-risk item missing reviewer APPROVED entry in history');
+  if (!history.some(h => h.action === 'APPROVED'))
+    errors.push('Missing reviewer APPROVED entry in history');
 
   if (errors.length > 0) {
     process.stderr.write(errors.join('\\n') + '\\n');

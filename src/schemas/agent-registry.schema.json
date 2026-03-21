@@ -9,7 +9,7 @@
       "properties": {
         "id": { "type": "string" },
         "role": { "type": "string", "enum": ["developer", "reviewer", "tester", "researcher"] },
-        "status": { "type": "string", "enum": ["active", "idle", "blocked", "completed", "stopped", "dead"] },
+        "status": { "type": "string", "enum": ["ACTIVE", "IDLE", "BLOCKED", "COMPLETED", "STOPPED", "DEAD"] },
         "current_work_item": { "type": ["string", "null"] },
         "convoy_id": { "type": "string" },
         "last_heartbeat": { "oneOf": [{ "type": "string", "format": "date-time" }, { "type": "null" }] }
