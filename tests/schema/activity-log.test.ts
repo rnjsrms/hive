@@ -27,7 +27,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: 'dev-1',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
       work_item: 'wi-3',
       details: 'Changed status to IN-PROGRESS',
     });
@@ -38,7 +38,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: 'lead',
-      event: 'CONVOY_CREATED',
+      action: 'CONVOY_CREATED',
       work_item: null,
       details: 'Created convoy-1',
     });
@@ -49,7 +49,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: 'reviewer',
-      event: 'HEARTBEAT',
+      action: 'HEARTBEAT',
     });
     expect(valid).toBe(true);
   });
@@ -57,7 +57,7 @@ describe('activity-log.schema.json', () => {
   it('should reject missing ts', () => {
     const valid = validate({
       agent: 'dev-1',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
     });
     expect(valid).toBe(false);
   });
@@ -65,12 +65,12 @@ describe('activity-log.schema.json', () => {
   it('should reject missing agent', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
     });
     expect(valid).toBe(false);
   });
 
-  it('should reject missing event', () => {
+  it('should reject missing action', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: 'dev-1',
@@ -82,7 +82,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: 'not-a-date',
       agent: 'dev-1',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
     });
     expect(valid).toBe(false);
   });
@@ -91,7 +91,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: 'dev-1',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
       work_item: 'invalid-id',
     });
     expect(valid).toBe(false);
@@ -101,7 +101,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: 'dev-1',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
       extra: 'not allowed',
     });
     expect(valid).toBe(false);
@@ -111,7 +111,7 @@ describe('activity-log.schema.json', () => {
     const valid = validate({
       ts: '2026-03-22T10:00:00Z',
       agent: '',
-      event: 'STATUS_CHANGE',
+      action: 'STATUS_CHANGE',
     });
     expect(valid).toBe(false);
   });
