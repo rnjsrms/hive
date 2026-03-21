@@ -423,22 +423,19 @@ Process incoming messages and state changes in this order:
 5. Log to `.hive/logs/activity.jsonl`.
 
 **When reviewer sends "APPROVED":**
-1. Update work item status to `APPROVED`.
-2. Append to history: `{"action": "APPROVED", "agent": "reviewer", "ts": "{ISO}", "notes": "{feedback}"}`
-3. `SendMessage` to `[hive:tester]`: "Please test WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
-4. Update `.hive/work-items/wi-{id}.json`.
+1. Reviewer has already set status to `APPROVED` — do not re-set it.
+2. `SendMessage` to `[hive:tester]`: "Please test WI-{id}: {title}. Branch: feature/wi-{id}-{slug}."
+3. Log to `.hive/logs/activity.jsonl`.
 
 **When reviewer sends "CHANGES-REQUESTED":**
-1. Update work item status to `CHANGES-REQUESTED`.
-2. Append to history: `{"action": "CHANGES-REQUESTED", "agent": "reviewer", "ts": "{ISO}", "notes": "{feedback}"}`
-3. `SendMessage` to the original developer: "Changes requested on WI-{id}. Feedback: {details}. Please fix and resubmit."
-4. Update `.hive/work-items/wi-{id}.json`.
+1. Reviewer has already set status to `CHANGES-REQUESTED` — do not re-set it.
+2. `SendMessage` to the original developer: "Changes requested on WI-{id}. Feedback: {details}. Please fix and resubmit."
+3. Log to `.hive/logs/activity.jsonl`.
 
 **When tester sends "TESTS-PASS":**
-1. Update work item status to `READY-TO-MERGE`.
-2. Append to history: `{"action": "TESTS-PASS", "agent": "tester", "ts": "{ISO}", "notes": "{details}"}`
-3. Update `.hive/work-items/wi-{id}.json`.
-4. Check if ALL work items in the convoy are `READY-TO-MERGE`.
+1. Tester has already set status to `READY-TO-MERGE` — do not re-set it.
+2. Check if ALL work items in the convoy are `READY-TO-MERGE`.
+3. Log to `.hive/logs/activity.jsonl`.
 
 **When tester sends "TESTS-FAIL":**
 1. Update work item status to `TESTS-FAILED`.

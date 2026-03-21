@@ -113,7 +113,10 @@ Where STATUS is one of: `APPROVED`, `CHANGES-REQUESTED`, `REVIEWING`, `BLOCKED`.
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
 2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "notes": "<summary>"}`
-3. Write the updated file back. Do not change the `status` field — that is the lead's responsibility after review.
+3. Update the `status` field based on your verdict:
+   - On **APPROVED** verdict: set `status` to `APPROVED`
+   - On **CHANGES-REQUESTED** verdict: set `status` to `CHANGES-REQUESTED`
+4. Write the updated file back.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` for each review action:
