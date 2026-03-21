@@ -1,6 +1,6 @@
 {
   "name": "hive",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "description": "Multi-agent orchestration system. Coordinates teams of agents to plan, implement, review, test, and validate code changes with enterprise quality.",
   "author": {
     "name": "User"

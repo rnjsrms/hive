@@ -60,7 +60,7 @@ Write these files using the Write tool:
 BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "master")
 ```
 ```json
-{"name": "hive", "version": "1.3.2", "base_branch": "$BASE_BRANCH"}
+{"name": "hive", "version": "1.3.3", "base_branch": "$BASE_BRANCH"}
 ```
 
 `.hive/work-items/_index.json`:
@@ -742,7 +742,7 @@ When this agent is invoked, execute the following in order:
 Begin by saying:
 
 ```
-[hive:lead] Hive Orchestration System v1.3.2
+[hive:lead] Hive Orchestration System v1.3.3
 Initializing workspace...
 ```
 

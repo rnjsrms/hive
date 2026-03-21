@@ -19,12 +19,13 @@ create a plan, spin up a team, and begin execution.
 
 1. **Interview** -- The lead agent asks clarifying questions about your objective to
    understand scope, constraints, and priorities.
-2. **Plan** -- A structured plan is created in `.hive/plans/` breaking the objective
-   into work items with dependencies, risk levels, and acceptance criteria.
+2. **Plan** -- The lead spawns a Plan agent and Reviewer agent that iterate on a
+   structured plan until the reviewer approves. The lead asks you for input if needed,
+   then presents the final plan for your sign-off.
 3. **Team** -- Agents are spawned for each role (developers, reviewer, tester,
    researcher) and registered in `.hive/agents/`.
-4. **Execute** -- Developers pick up work items, implement on feature branches, and
-   update status in `.hive/work-items/`. The lead coordinates via message passing.
+4. **Execute** -- The lead assigns work items to developers, who implement on feature
+   branches and update status in `.hive/work-items/`. All coordination goes through the lead.
 5. **Validate** -- The reviewer checks code quality and the tester runs verification.
    Completion hooks enforce that items pass review and testing before merging.
 
@@ -34,13 +35,14 @@ Hive uses a role-based agent hierarchy:
 
 | Role         | Responsibility                                          |
 |--------------|---------------------------------------------------------|
-| **Lead**     | Plans work, assigns tasks, coordinates the team         |
-| **Developer**| Implements features on feature branches                 |
+| **Lead**     | Plans work, assigns tasks, coordinates the team. Only agent that talks to the user. |
+| **Developer**| Implements features on feature branches (worktree-isolated)  |
 | **Reviewer** | Reviews code, approves or requests changes              |
-| **Tester**   | Runs tests, verifies acceptance criteria                |
+| **Tester**   | Runs tests, verifies acceptance criteria (worktree-isolated) |
 | **Researcher**| Investigates unknowns, spikes, and technical questions |
 
 All agents communicate through structured messages and share state via `.hive/` files.
+The lead has absolute authority -- agents never self-assign work or act without lead instruction.
 
 ## Gitflow
 
@@ -62,45 +64,9 @@ All project state lives in `.hive/`:
 - `.hive/plans/` -- planning documents
 - `.hive/research/` -- research findings from the researcher agent (topic-based markdown files)
 - `.hive/archive/` -- archived (completed or abandoned) convoys
-- `.hive/logs/activity.jsonl` -- general activity log (heartbeats, milestones, state transitions)
-- `.hive/logs/communications.jsonl` -- inter-agent message log
-- `.hive/logs/task-ledger.jsonl` -- task creation and update log
-- `.hive/logs/decisions.jsonl` -- lead's architectural decision records (tech choices, scope changes, conflict resolutions)
-- `.hive/logs/autoresearch.jsonl` -- AutoResearch iteration log (metric deltas, outcomes per iteration)
-
-## AutoResearch Mode
-
-AutoResearch is a continuous, metric-driven improvement loop. Activate it by giving the
-lead a target metric and value (e.g., "increase test coverage to 90%", "reduce lint
-violations to zero").
-
-The system runs a 7-phase loop: MEASURE → IDENTIFY → PROPOSE → IMPLEMENT → VALIDATE →
-LOG → MERGE/REVERT. Each iteration targets a single atomic change. Changes that don't
-improve the metric are automatically reverted. Progress is logged to
-`.hive/logs/autoresearch.jsonl`.
-
-### Concurrency protection
-
-Before starting an iteration, the lead checks `.hive/metrics.json` for
-`autoresearch_status`. If the value is `"running"`, the cycle is skipped to prevent
-overlapping iterations (git conflicts, race conditions on state files). The field is set
-to `"running"` at iteration start and `"idle"` at iteration end (or on error/revert).
-
-```json
-{
-  "autoresearch_status": "running",
-  "autoresearch_iteration": 5,
-  "autoresearch_started_at": "2026-03-21T05:00:00Z"
-}
-```
-
-If `autoresearch_status` is `"running"` but `autoresearch_started_at` is older than
-15 minutes, the iteration is assumed crashed and the status is reset to `"idle"`.
-
-### Guard constraints
-
-- 15-minute per-iteration budget (stale lock auto-cleared)
-- Auto-stop after 3 consecutive reverts
+- `.hive/logs/activity.jsonl` -- work item state changes (hook-driven via `log-activity.sh`)
+- `.hive/logs/communications.jsonl` -- inter-agent messages with `from`, `to`, `summary` (hook-driven via `log-communication.sh`)
+- `.hive/logs/task-ledger.jsonl` -- task creation and update log (hook-driven via `log-task-change.sh`)
 
 ## Resuming After a Crash
 
@@ -126,7 +92,7 @@ cat .hive/work-items/_index.json | python3 -c "
 import json, sys
 items = json.load(sys.stdin).get('items', [])
 for i in items:
-    if i.get('status') == 'ready-to-merge':
+    if i.get('status') == 'READY_TO_MERGE':
         print(f\"{i.get('id')}: {i.get('title')} -> {i.get('branch')}\")
 "
 ```
@@ -163,11 +129,14 @@ If a developer reports a merge conflict:
 
 Hive uses Claude Code hooks (configured in `plugins/hive/hooks/hooks.json`) to:
 
-- **Log communications** between agents to `communications.jsonl`
+- **Log communications** between agents to `communications.jsonl` (with `from`, `to`, `summary`)
 - **Log task changes** (create/update) to `task-ledger.jsonl`
+- **Log work item activity** (status changes) to `activity.jsonl` via `log-activity.sh`
 - **Auto-commit** `.hive/` state changes to git after each write
-- **Validate completion** ensuring work items pass review and testing
+- **Validate completion** ensuring work items pass review and testing before merge
 - **Send notifications** via Windows desktop notifications
+
+All logging is hook-driven and deterministic -- agents do not manually write to log files.
 
 ### Hook Debugging Tips
 
@@ -220,9 +189,9 @@ npm run ci                # All checks: typecheck + tests + coverage (use in CI 
 
 | Category | Dir | Tests | What it validates |
 |----------|-----|-------|-------------------|
-| **Unit** | `tests/unit/` | ~100 | Pure function logic in `src/*.ts` modules |
-| **Integration** | `tests/integration/` | ~35 | Real bash/powershell script execution with temp dirs |
-| **Schema** | `tests/schema/` | ~65 | JSON schemas, config file validation, version consistency |
+| **Unit** | `tests/unit/` | ~110 | Pure function logic in `src/*.ts` modules |
+| **Integration** | `tests/integration/` | ~40 | Real bash/powershell script execution with temp dirs |
+| **Schema** | `tests/schema/` | ~75 | JSON schemas, config file validation, version consistency |
 | **Agents** | `tests/agents/` | ~75 | YAML frontmatter, markdown structure, cross-agent consistency |
 
 ### Source Modules
