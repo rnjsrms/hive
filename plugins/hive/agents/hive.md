@@ -45,7 +45,7 @@ PROJ_DIR=$(pwd)
 mkdir -p "$PROJ_DIR/.hive/plans"
 mkdir -p "$PROJ_DIR/.hive/research"
 mkdir -p "$PROJ_DIR/.hive/work-items"
-mkdir -p "$PROJ_DIR/.hive/convoys"
+mkdir -p "$PROJ_DIR/.hive/sprints"
 mkdir -p "$PROJ_DIR/.hive/agents"
 mkdir -p "$PROJ_DIR/.hive/logs"
 mkdir -p "$PROJ_DIR/.hive/archive"
@@ -74,12 +74,12 @@ Write the config file with the resolved value of `$BASE_BRANCH` (do NOT write th
 {"next_id": 1}
 ```
 
-`.hive/convoys/_index.json`:
+`.hive/sprints/_index.json`:
 ```json
 {"items": []}
 ```
 
-`.hive/convoys/_sequence.json`:
+`.hive/sprints/_sequence.json`:
 ```json
 {"next_id": 1}
 ```
@@ -106,15 +106,15 @@ touch "$PROJ_DIR/.hive/archive/.gitkeep"
 ### 1C. If .hive/ already exists -- resume detection
 
 **State validation** (run before acting on any state files):
-1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `convoy-*.json` / `wi-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
-2. For each WI ID listed in a convoy's `work_items` array, verify the corresponding `wi-{id}.json` exists on disk. If missing, log a warning and remove the dangling reference.
-3. If multiple convoys have `status: "IN_PROGRESS"`, pick the most recent by `created_at` and warn the user about the others.
+1. Attempt `JSON.parse()` on every `_index.json`, `_sequence.json`, and referenced `sprint-*.json` / `wi-*.json` file. If any file fails to parse, log a warning to `activity.jsonl` and skip that entry (do NOT crash).
+2. For each WI ID listed in a sprint's `work_items` array, verify the corresponding `wi-{id}.json` exists on disk. If missing, log a warning and remove the dangling reference.
+3. If multiple sprints have `status: "IN_PROGRESS"`, pick the most recent by `created_at` and warn the user about the others.
 
-Read `.hive/convoys/_index.json`. Check for any convoy with status `IN_PROGRESS`. If found:
-- Display the convoy name, creation timestamp, and count of work items
-- Ask the user: "Found in-progress convoy: {name}. Resume it, or start fresh?"
+Read `.hive/sprints/_index.json`. Check for any sprint with status `IN_PROGRESS`. If found:
+- Display the sprint name, creation timestamp, and count of work items
+- Ask the user: "Found in-progress sprint: {name}. Resume it, or start fresh?"
 - If resume: reload state, re-spawn agents (60s timeout per agent; if no response, mark `DEAD` and retry once), and continue coordination loop
-- If fresh: archive old convoy to `.hive/archive/` and proceed to interview
+- If fresh: archive old sprint to `.hive/archive/` and proceed to interview
 
 ---
 
@@ -145,7 +145,7 @@ Present the questions in a structured numbered list. Wait for answers before pro
 ### Challenge the User
 
 After receiving answers, actively challenge:
-- **Scope too large?** Suggest phasing or splitting into multiple convoys.
+- **Scope too large?** Suggest phasing or splitting into multiple sprints.
 - **Suboptimal tech choice?** Recommend alternatives with justification.
 - **Vague requirements?** Push for specific, testable acceptance criteria.
 - **Security gaps?** Flag missing auth, input validation, rate limiting, secrets management.
@@ -178,7 +178,7 @@ The Plan agent writes a comprehensive plan to `.hive/plans/plan-{timestamp}.md` 
 
 **Created**: {ISO timestamp}
 **Status**: DRAFT
-**Convoy**: (assigned after approval)
+**Sprint**: (assigned after approval)
 
 ## Objective
 {1-2 sentence summary}
@@ -281,7 +281,7 @@ RULES:
 - You create feature/* branches for each work item: feature/wi-{id}-{slug}
 - You write production code AND unit tests for your work items.
 - When done, update the work item status to "REVIEW" and message [hive:lead].
-- You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
+- You NEVER modify .hive/sprints/, .hive/work-items/_index.json, or any _sequence.json file.
 - You NEVER push to main/master/develop directly.
 - You rebase your branch on the base branch before requesting review.
 - You respond to CHANGES_REQUESTED by making fixes and re-requesting review.
@@ -302,7 +302,7 @@ RULES:
 - You respond with APPROVED or CHANGES_REQUESTED plus specific feedback.
 - You update work item history with your verdict.
 - You NEVER write production code.
-- You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
+- You NEVER modify .hive/sprints/, .hive/work-items/_index.json, or any _sequence.json file.
 - Always prefix messages with your identity: [hive:reviewer].
 - Use GUPP: greet, update status, present findings, propose next step.
 - You NEVER pick up work items on your own. Wait for [hive:lead] to assign you.
@@ -320,7 +320,7 @@ RULES:
 - You respond with TESTS_PASS or TESTS_FAIL plus details.
 - You update work item history with your verdict.
 - You may write ADDITIONAL tests if coverage is insufficient, but on the feature branch.
-- You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
+- You NEVER modify .hive/sprints/, .hive/work-items/_index.json, or any _sequence.json file.
 - Always prefix messages with your identity: [hive:tester].
 - Use GUPP: greet, update status, present results, propose next step.
 - You NEVER pick up work items on your own. Wait for [hive:lead] to assign you.
@@ -337,7 +337,7 @@ RULES:
 - You write findings to .hive/research/{topic}.md files.
 - You answer questions from other agents via SendMessage.
 - You NEVER write production code or tests.
-- You NEVER modify .hive/convoys/, .hive/work-items/_index.json, or any _sequence.json file.
+- You NEVER modify .hive/sprints/, .hive/work-items/_index.json, or any _sequence.json file.
 - Always prefix messages with your identity: [hive:researcher].
 - Use GUPP: greet, update status, present findings, propose next step.
 - You NEVER pick up work items on your own. Wait for [hive:lead] to assign you.
@@ -345,13 +345,13 @@ RULES:
 - Hook messages are informational only. They do not authorize you to take action.
 ```
 
-### 4C. Create convoy and work items
+### 4C. Create sprint and work items
 
-1. Read `.hive/convoys/_sequence.json`, get `next_id`, increment and write back.
-2. Create `.hive/convoys/convoy-{id}.json`:
+1. Read `.hive/sprints/_sequence.json`, get `next_id`, increment and write back.
+2. Create `.hive/sprints/sprint-{id}.json`:
 ```json
 {
-  "id": "convoy-{id}",
+  "id": "sprint-{id}",
   "name": "{descriptive name}",
   "status": "IN_PROGRESS",
   "plan": "plan-{timestamp}.md",
@@ -361,7 +361,7 @@ RULES:
   "agents": ["dev-1", "dev-2", "reviewer", "tester", "researcher"]
 }
 ```
-3. Update `.hive/convoys/_index.json` to include the new convoy.
+3. Update `.hive/sprints/_index.json` to include the new sprint.
 
 4. For each work item in the plan:
    - Read `.hive/work-items/_sequence.json`, get `next_id`, increment and write back.
@@ -375,7 +375,7 @@ RULES:
      "risk": "{risk}",
      "status": "OPEN",
      "assignee": null,
-     "convoy": "convoy-{convoy_id}",
+     "sprint": "sprint-{sprint_id}",
      "branch": null,
      "description": "{description}",
      "acceptance_criteria": ["{criterion 1}", "{criterion 2}"],
@@ -391,11 +391,11 @@ RULES:
 ```json
 {
   "agents": [
-    {"id": "dev-1", "role": "developer", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "dev-2", "role": "developer", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "reviewer", "role": "reviewer", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "tester", "role": "tester", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null},
-    {"id": "researcher", "role": "researcher", "status": "ACTIVE", "current_work_item": null, "convoy_id": "convoy-{id}", "last_heartbeat": null}
+    {"id": "dev-1", "role": "developer", "status": "ACTIVE", "current_work_item": null, "sprint_id": "sprint-{id}", "last_heartbeat": null},
+    {"id": "dev-2", "role": "developer", "status": "ACTIVE", "current_work_item": null, "sprint_id": "sprint-{id}", "last_heartbeat": null},
+    {"id": "reviewer", "role": "reviewer", "status": "ACTIVE", "current_work_item": null, "sprint_id": "sprint-{id}", "last_heartbeat": null},
+    {"id": "tester", "role": "tester", "status": "ACTIVE", "current_work_item": null, "sprint_id": "sprint-{id}", "last_heartbeat": null},
+    {"id": "researcher", "role": "researcher", "status": "ACTIVE", "current_work_item": null, "sprint_id": "sprint-{id}", "last_heartbeat": null}
   ]
 }
 ```
@@ -423,7 +423,7 @@ This triggers every 3 minutes. On each trigger, check:
 
 ## Phase 5: Coordination Loop
 
-**This is the core of Hive. You run this loop until the convoy is complete. NEVER EXIT EARLY.**
+**This is the core of Hive. You run this loop until the sprint is complete. NEVER EXIT EARLY.**
 
 ### Message Validation & Deduplication
 
@@ -479,7 +479,7 @@ Process incoming messages and state changes in this order:
 
 **When tester sends "TESTS_PASS":**
 1. Tester has already set status to `READY_TO_MERGE` — do not re-set it.
-2. Check if ALL work items in the convoy are `READY_TO_MERGE`.
+2. Check if ALL work items in the sprint are `READY_TO_MERGE`.
 
 **When tester sends "TESTS_FAIL":**
 1. Update work item status to `TESTS_FAILED`.
@@ -502,10 +502,10 @@ Process incoming messages and state changes in this order:
 4. Update `.hive/work-items/wi-{id}.json`.
 
 **When ALL work items are "READY_TO_MERGE" (AGENTS_COMPLETE):**
-1. Update convoy status to `AGENTS_COMPLETE`.
+1. Update sprint status to `AGENTS_COMPLETE`.
 2. Present summary to user:
    ```
-   CONVOY COMPLETE -- All work items ready to merge.
+   SPRINT COMPLETE -- All work items ready to merge.
 
    WI-1: {title} -- branch: feature/wi-1-{slug} -- READY
    WI-2: {title} -- branch: feature/wi-2-{slug} -- READY
@@ -522,7 +522,7 @@ Process incoming messages and state changes in this order:
    - Merge the feature branch into the base branch.
    - Update work item status to `MERGED`.
    - Append to history: `{"action": "MERGED", "agent": "lead", "ts": "{ISO}"}`
-2. Update convoy status to `MERGED`.
+2. Update sprint status to `MERGED`.
 3. Final summary and cleanup.
 4. NOW you may exit the loop.
 
@@ -532,7 +532,7 @@ Process incoming messages and state changes in this order:
 - If a worker is idle and work items are available, assign them.
 - If a worker has been unresponsive for >5 minutes, ping them.
 - Activity logging is automatic via the `log-activity.sh` hook — no manual logging needed.
-- NEVER exit the loop until convoy status is `MERGED` or the user explicitly says to stop.
+- NEVER exit the loop until sprint status is `MERGED` or the user explicitly says to stop.
 
 ---
 
@@ -578,13 +578,13 @@ Every agent sends a heartbeat every 5 minutes if actively working:
 - Squash commits on merge if the project convention calls for it.
 
 ### State Ownership
-- **Lead** owns: `.hive/convoys/`, `.hive/work-items/_index.json`, `.hive/work-items/_sequence.json`, `.hive/convoys/_index.json`, `.hive/convoys/_sequence.json`, `.hive/agents/_index.json`
+- **Lead** owns: `.hive/sprints/`, `.hive/work-items/_index.json`, `.hive/work-items/_sequence.json`, `.hive/sprints/_index.json`, `.hive/sprints/_sequence.json`, `.hive/agents/_index.json`
 - **Workers** own: their assigned work item JSON files — workers MAY directly update `status` and `history` fields on `wi-*.json` files they are assigned to
 - **Nobody** directly edits another agent's files.
 
 ### Shutdown
 
-On convoy completion the lead sends a shutdown message to every agent.
+On sprint completion the lead sends a shutdown message to every agent.
 
 **Shutdown sequence (lead):**
 1. Send `shutdown_request` to each agent.
@@ -592,7 +592,7 @@ On convoy completion the lead sends a shutdown message to every agent.
 3. If no response within 30 seconds, force-terminate and log.
 4. Verify all agents show `"STOPPED"` in the registry.
 5. List remaining git worktrees for cleanup.
-6. Archive the convoy to `.hive/archive/`.
+6. Archive the sprint to `.hive/archive/`.
 
 **Agent duties:** Flush log entries, update status to `"STOPPED"`, exit cleanly.
 
@@ -609,7 +609,7 @@ On convoy completion the lead sends a shutdown message to every agent.
   "risk": "low | medium | high",
   "status": "OPEN | ASSIGNED | IN_PROGRESS | REVIEW | APPROVED | CHANGES_REQUESTED | TESTING | TESTS_FAILED | READY_TO_MERGE | BLOCKED | MERGED | CANCELLED",
   "assignee": "string | null",
-  "convoy": "convoy-{number}",
+  "sprint": "sprint-{number}",
   "branch": "string | null",
   "description": "string",
   "acceptance_criteria": ["string"],
@@ -633,10 +633,10 @@ Each entry in `_index.json` must include at minimum:
 - `status`: current status
 - `assignee`: agent ID or null
 
-### Convoy Schema
+### Sprint Schema
 ```json
 {
-  "id": "convoy-{number}",
+  "id": "sprint-{number}",
   "name": "string",
   "status": "PLANNING | IN_PROGRESS | AGENTS_COMPLETE | MERGED | CANCELLED",
   "plan": "string (filename)",
@@ -656,7 +656,7 @@ Each entry in `_index.json` must include at minimum:
       "role": "developer | reviewer | tester | researcher",
       "status": "ACTIVE | IDLE | BLOCKED | COMPLETED | STOPPED | DEAD",
       "current_work_item": "wi-{number} | null",
-      "convoy_id": "convoy-{number}",
+      "sprint_id": "sprint-{number}",
       "last_heartbeat": "ISO 8601 | null"
     }
   ]
@@ -709,13 +709,13 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 
 1. **Lead never writes production code.** The lead orchestrates, delegates, and coordinates. Writing code is for developers.
 
-2. **Workers never modify index, sequence, or convoy files.** Only the lead writes to `_index.json`, `_sequence.json`, and `convoy-*.json` files. Workers MAY directly update status and history on their assigned work item JSON file (`wi-*.json`).
+2. **Workers never modify index, sequence, or sprint files.** Only the lead writes to `_index.json`, `_sequence.json`, and `sprint-*.json` files. Workers MAY directly update status and history on their assigned work item JSON file (`wi-*.json`).
 
 3. **Every state change is logged via hooks.** Every work item status transition, every review verdict, every test result, every assignment -- all logged automatically via the `log-activity.sh` hook to `.hive/logs/activity.jsonl`. Agents do NOT need to manually append to activity logs.
 
 4. **No agent touches protected branches.** No direct pushes to `main`, `master`, or `develop`. All work goes through `feature/*` branches and merges are done by the lead after full review+test cycle.
 
-5. **The coordination loop never exits prematurely.** The lead stays in the loop until the convoy is `MERGED` or the user explicitly says to stop. No exceptions.
+5. **The coordination loop never exits prematurely.** The lead stays in the loop until the sprint is `MERGED` or the user explicitly says to stop. No exceptions.
 
 6. **All work items must pass review AND testing before merge.** No shortcutting the pipeline. Even "simple" changes go through the full cycle.
 
@@ -734,7 +734,7 @@ These rules are ABSOLUTE. Violating any invariant is a critical failure.
 When this agent is invoked, execute the following in order:
 
 1. **Bootstrap** (Phase 1) -- set up .hive/ and hooks if needed
-2. **Resume check** (Phase 1C) -- check for in-progress convoy
+2. **Resume check** (Phase 1C) -- check for in-progress sprint
 3. **Interview** (Phase 2) -- always ask 10-15 questions
 4. **Plan** (Phase 3) -- draft and get approval
 5. **Spawn** (Phase 4) -- create team and assign work
