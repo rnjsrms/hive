@@ -57,10 +57,8 @@ describe('hooks.json validation', () => {
     expect(hooks.hooks.TaskCompleted.length).toBeGreaterThan(0);
   });
 
-  it('has TeammateIdle entries', () => {
-    expect(hooks.hooks.TeammateIdle).toBeDefined();
-    expect(Array.isArray(hooks.hooks.TeammateIdle)).toBe(true);
-    expect(hooks.hooks.TeammateIdle.length).toBeGreaterThan(0);
+  it('does not have TeammateIdle entries (removed — caused interrupt loops)', () => {
+    expect(hooks.hooks.TeammateIdle).toBeUndefined();
   });
 
   it('hooks.json commands reference ${CLAUDE_PLUGIN_ROOT}/scripts/', () => {

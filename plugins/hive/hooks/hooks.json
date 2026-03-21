@@ -39,16 +39,6 @@
         ]
       }
     ],
-    "TeammateIdle": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/check-idle-work.sh\""
-          }
-        ]
-      }
-    ],
     "Notification": [
       {
         "hooks": [
