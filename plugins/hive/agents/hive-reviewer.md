@@ -112,13 +112,13 @@ Where STATUS is one of: `APPROVED`, `CHANGES-REQUESTED`, `REVIEWING`, `BLOCKED`.
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
-2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "details": "<summary>"}`
+2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "reviewer", "action": "<verdict>", "notes": "<summary>"}`
 3. Write the updated file back. Do not change the `status` field — that is the lead's responsibility after review.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` for each review action:
 ```json
-{"ts":"<ISO8601>","agent":"reviewer","event":"<event>","work_item":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"reviewer","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
 Events: `REVIEW-START`, `REVIEW-APPROVED`, `REVIEW-CHANGES-REQUESTED`, `SIMPLIFY-RUN`.
 

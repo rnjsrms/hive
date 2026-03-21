@@ -103,14 +103,14 @@ Where STATUS is one of: `TESTING`, `TESTS-PASS`, `TESTS-FAIL`, `BLOCKED`, `READY
 
 ### Updating Work Items
 1. Read `.hive/work-items/wi-{id}.json`
-2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "tester", "action": "<verdict>", "details": "<summary>"}`
+2. Append to the `history` array: `{"ts": "<ISO8601>", "agent": "tester", "action": "<verdict>", "notes": "<summary>"}`
 3. If TESTS-PASS, update `status` to `READY-TO-MERGE`.
 4. Write the updated file back.
 
 ### Activity Log
 Append to `.hive/logs/activity.jsonl` for each test action:
 ```json
-{"ts":"<ISO8601>","agent":"tester","event":"<event>","work_item":"WI-{id}","details":"<description>"}
+{"ts":"<ISO8601>","agent":"tester","action":"<action>","work_item":"WI-{id}","details":"<description>"}
 ```
 Events: `TEST-START`, `TEST-WRITE`, `SUITE-RUN`, `TESTS-PASS`, `TESTS-FAIL`, `READY-TO-MERGE`.
 
