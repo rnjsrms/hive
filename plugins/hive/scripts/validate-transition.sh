@@ -32,7 +32,7 @@ try {
   const relPath = path.relative(projectDir, filePath).replace(/\\\\/g, '/');
   let oldStatus;
   try {
-    const old = execSync('git show HEAD:' + relPath, { cwd: projectDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    const old = execSync('git show \"HEAD:' + relPath + '\"', { cwd: projectDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
     oldStatus = JSON.parse(old).status;
   } catch (e) {
     // File is new (not in git yet) — no previous status to validate against
@@ -73,6 +73,6 @@ try {
     process.exit(2);
   }
 } catch (e) { process.stderr.write('hive-hook: ' + e.message + '\\n'); }
-" "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null
+" "${CLAUDE_PROJECT_DIR:-.}"
 
 exit $?
