@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "Hive multi-agent orchestration plugins for Claude Code",
-    "version": "1.3.3"
+    "version": "2.0.0"
   },
   "plugins": [
     {
       "name": "hive",
       "source": "./plugins/hive",
       "description": "Multi-agent orchestration system. Coordinates teams of agents to plan, implement, review, test, and validate code changes with enterprise quality.",
-      "version": "1.3.3",
+      "version": "2.0.0",
       "keywords": ["orchestration", "multi-agent", "teams", "code-review", "testing"],
       "category": "productivity"
     }
