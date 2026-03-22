@@ -43,7 +43,9 @@ try {
   // Same status — no transition, allow
   if (oldStatus === newStatus) process.exit(0);
 
-  // Validate the transition using the state machine
+  // Validate the transition using the state machine.
+  // NOTE: This map duplicates src/state-machine.ts because bash hooks
+  // cannot import TypeScript modules directly. Keep both in sync.
   const VALID_TRANSITIONS = {
     OPEN: ['ASSIGNED', 'CANCELLED'],
     ASSIGNED: ['IN_PROGRESS', 'CANCELLED'],

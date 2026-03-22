@@ -30,11 +30,11 @@ else
   mkdir -p "$HIVE_DIR/plans" "$HIVE_DIR/research" "$HIVE_DIR/work-items" \
            "$HIVE_DIR/sprints" "$HIVE_DIR/agents" "$HIVE_DIR/logs" "$HIVE_DIR/archive"
 
-  echo '{"items":[]}' > "$HIVE_DIR/work-items/_index.json"
-  echo '{"next_id":1}' > "$HIVE_DIR/work-items/_sequence.json"
-  echo '{"items":[]}' > "$HIVE_DIR/sprints/_index.json"
-  echo '{"next_id":1}' > "$HIVE_DIR/sprints/_sequence.json"
-  echo '{"agents":[]}' > "$HIVE_DIR/agents/_index.json"
+  printf '{\n  "items": []\n}\n' > "$HIVE_DIR/work-items/_index.json"
+  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/work-items/_sequence.json"
+  printf '{\n  "items": []\n}\n' > "$HIVE_DIR/sprints/_index.json"
+  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/sprints/_sequence.json"
+  printf '{\n  "agents": []\n}\n' > "$HIVE_DIR/agents/_index.json"
 
   touch "$HIVE_DIR/logs/activity.jsonl" \
         "$HIVE_DIR/logs/communications.jsonl" \
