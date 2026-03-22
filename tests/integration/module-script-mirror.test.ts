@@ -16,6 +16,7 @@ import { shouldAutoCommit } from '../../src/auto-commit.js';
 import { validateCompletion, type FsOps } from '../../src/validate-completion.js';
 import { VALID_TRANSITIONS } from '../../src/state-machine.js';
 import { getRequiredDirs, getRequiredFiles } from '../../src/bootstrap.js';
+import { DEFAULT_ROLE_CATALOG } from '../../src/role-catalog-defaults.js';
 
 const hasBash = (() => {
   try {
@@ -329,6 +330,7 @@ describeIf('module-script mirror: bootstrap required files', () => {
     fs.writeFileSync(path.join(hiveDir, 'config.json'), '{"name":"hive","version":"2.1.1","base_branch":"master"}');
     // Intentionally omit role-catalog.json
     try {
+      // bootstrap.sh merges stderr→stdout via 2>&1 and uses || true, so it always exits 0
       const result = execSync(`bash "${path.join(SCRIPTS_DIR, 'bootstrap.sh')}"`, {
         env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -336,6 +338,36 @@ describeIf('module-script mirror: bootstrap required files', () => {
       });
       const output = result.toString();
       expect(output).toContain('missing role-catalog.json');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should produce role-catalog.json matching DEFAULT_ROLE_CATALOG from TypeScript', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-bootstrap-'));
+    try {
+      execSync(`bash "${path.join(SCRIPTS_DIR, 'bootstrap.sh')}"`, {
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+
+      const catalogPath = path.join(tmpDir, '.hive', 'role-catalog.json');
+      const scriptCatalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
+
+      // Verify structure matches DEFAULT_ROLE_CATALOG
+      expect(scriptCatalog.specializations.length).toBe(DEFAULT_ROLE_CATALOG.specializations.length);
+
+      for (const tsDef of DEFAULT_ROLE_CATALOG.specializations) {
+        const shDef = scriptCatalog.specializations.find(
+          (s: any) => s.name === tsDef.name,
+        );
+        expect(shDef, `Missing specialization: ${tsDef.name}`).toBeDefined();
+        expect(shDef.base_role).toBe(tsDef.base_role);
+        expect(shDef.triggers.sort()).toEqual([...tsDef.triggers].sort());
+        expect(shDef.brief).toBe(tsDef.brief);
+        expect(shDef.model).toBe(tsDef.model);
+      }
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
