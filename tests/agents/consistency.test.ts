@@ -8,12 +8,9 @@ function readAgent(file: string): string {
   return readFileSync(join(AGENTS_DIR, file), 'utf-8');
 }
 
-const workerFiles = [
-  'hive-developer.md',
-  'hive-reviewer.md',
-  'hive-tester.md',
-  'hive-researcher.md',
-];
+// Worker files: all agent MDs except hive.md (lead) and hive-monitor.md (monitor)
+const workerFiles = readdirSync(AGENTS_DIR)
+  .filter(f => f.endsWith('.md') && f !== 'hive.md' && f !== 'hive-monitor.md');
 
 const allFiles = readdirSync(AGENTS_DIR).filter(f => f.endsWith('.md'));
 

@@ -404,6 +404,38 @@ describe('createWorkItem', () => {
     expect(wi.dependencies).toEqual([]);
   });
 
+  it('should default tags to empty array when omitted', () => {
+    const { fs } = seedWorkItemFs();
+    const wi = createWorkItem(BASE_WI_CONFIG, '/h', fs);
+    expect(wi.tags).toEqual([]);
+  });
+
+  it('should default reviewers to empty array when omitted', () => {
+    const { fs } = seedWorkItemFs();
+    const wi = createWorkItem(BASE_WI_CONFIG, '/h', fs);
+    expect(wi.reviewers).toEqual([]);
+  });
+
+  it('should include tags when provided', () => {
+    const { fs } = seedWorkItemFs();
+    const wi = createWorkItem(
+      { ...BASE_WI_CONFIG, tags: ['auth', 'crypto', 'api'] },
+      '/h',
+      fs,
+    );
+    expect(wi.tags).toEqual(['auth', 'crypto', 'api']);
+  });
+
+  it('should include reviewers when provided', () => {
+    const { fs } = seedWorkItemFs();
+    const wi = createWorkItem(
+      { ...BASE_WI_CONFIG, reviewers: ['security', 'architecture'] },
+      '/h',
+      fs,
+    );
+    expect(wi.reviewers).toEqual(['security', 'architecture']);
+  });
+
   it('should produce an object matching work-item schema structure', () => {
     const { fs } = seedWorkItemFs();
     const wi = createWorkItem(BASE_WI_CONFIG, '/h', fs);
@@ -420,6 +452,8 @@ describe('createWorkItem', () => {
     expect(wi).toHaveProperty('description');
     expect(wi).toHaveProperty('acceptance_criteria');
     expect(wi).toHaveProperty('dependencies');
+    expect(wi).toHaveProperty('tags');
+    expect(wi).toHaveProperty('reviewers');
     expect(wi).toHaveProperty('history');
     expect(wi).toHaveProperty('created_at');
     expect(wi).toHaveProperty('updated_at');

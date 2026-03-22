@@ -35,6 +35,8 @@ export interface WorkItemConfig {
   description: string;
   acceptance_criteria: string[];
   dependencies?: string[];
+  tags?: string[];
+  reviewers?: string[];
   timestamp?: string;
 }
 
@@ -62,6 +64,8 @@ export interface WorkItemData {
   description: string;
   acceptance_criteria: string[];
   dependencies: string[];
+  tags: string[];
+  reviewers: string[];
   history: Array<{ action: string; agent: string; ts: string; notes?: string }>;
   created_at: string;
   updated_at: string;
@@ -178,6 +182,8 @@ export function createWorkItem(
     description: config.description,
     acceptance_criteria: config.acceptance_criteria,
     dependencies: config.dependencies ?? [],
+    tags: config.tags ?? [],
+    reviewers: config.reviewers ?? [],
     history: [],
     created_at: now,
     updated_at: now,
