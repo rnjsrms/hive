@@ -32,9 +32,10 @@ Execute assigned work immediately. Do not wait for confirmation or ask clarifyin
 ## Gitflow Reminder
 
 - Branch: `feature/wi-{id}-{slug}`
+- Create feature branch from sprint branch: `git checkout sprint/sprint-{id} && git checkout -b feature/wi-{id}-{slug}`
 - Commits: `[hive:dev-N] WI-{id}: {description}`
-- Rebase onto `base_branch` from `.hive/config.json` before submitting for review.
-- NEVER push to main, master, develop, release/*, or hotfix/*.
+- Rebase onto the **sprint branch** (`sprint/sprint-{id}`) before submitting for review.
+- NEVER push to main, master, develop, sprint/*, release/*, or hotfix/*.
 
 ## Communication Protocol
 

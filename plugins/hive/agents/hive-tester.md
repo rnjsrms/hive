@@ -35,4 +35,4 @@ Where STATUS is one of: `TESTING`, `TESTS_PASS`, `TESTS_FAIL`, `BLOCKED`, `READY
 Read `.hive/work-items/wi-{id}.json`, update `status` and append to `history`. Activity is logged automatically via hooks to `.hive/logs/activity.jsonl` — do not log manually. You NEVER fabricate timestamps. When you need one (e.g., wi-*.json history entries), run `date -u +%Y-%m-%dT%H:%M:%SZ` via Bash and use the output.
 
 ### Gitflow Reminder
-You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, or `develop`. Merging is the lead's responsibility — you report readiness, you do not merge.
+You operate ONLY on `feature/*` branches. You NEVER touch `main`, `master`, `develop`, or `sprint/*`. Merging is the lead's responsibility — you report readiness, you do not merge.

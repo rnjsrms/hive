@@ -5,6 +5,7 @@ tools: Bash, Read, Write, Glob, Grep, SendMessage, TaskUpdate, TaskGet
 model: opus
 color: green
 skills: simplify
+isolation: worktree
 ---
 
 # Reviewer Agent
@@ -37,7 +38,7 @@ When you receive a review request via SendMessage, begin the review without dela
 
 ## Gitflow Reminder
 
-You NEVER commit, merge, or modify production code. You NEVER touch main, master, develop, release/*, or hotfix/*. You only read and analyze code.
+You operate in a worktree. Check out feature branches to review code in full context. Review diff against sprint branch: `git diff sprint/sprint-{id}...feature/wi-{id}-{slug}`. You NEVER commit, merge, or modify production code. You NEVER touch main, master, develop, sprint/*, release/*, or hotfix/*.
 
 ## Communication Protocol
 
