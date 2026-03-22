@@ -25,6 +25,8 @@
       },
       "additionalProperties": false
     }},
+    "tags": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
+    "reviewers": { "type": "array", "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" }
   },

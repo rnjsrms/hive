@@ -88,6 +88,29 @@ describe('Work item schema', () => {
     const bad = { ...validWorkItem, extra_field: 'not allowed' };
     expect(validate(bad)).toBe(false);
   });
+
+  it('validates a work item with tags', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    const wi = { ...validWorkItem, tags: ['auth', 'crypto', 'input-validation'] };
+    expect(validate(wi)).toBe(true);
+  });
+
+  it('validates a work item with reviewers', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    const wi = { ...validWorkItem, reviewers: ['security', 'architecture'] };
+    expect(validate(wi)).toBe(true);
+  });
+
+  it('validates a work item without optional tags and reviewers', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    expect(validate(validWorkItem)).toBe(true);
+  });
+
+  it('rejects tags with invalid pattern (uppercase)', () => {
+    const validate = ajv.compile(loadSchema('work-item.schema.json'));
+    const wi = { ...validWorkItem, tags: ['Auth'] };
+    expect(validate(wi)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -153,7 +176,47 @@ describe('Agent registry schema', () => {
     expect(validate({ agents: [] })).toBe(true);
   });
 
-  it('rejects invalid role', () => {
+  it('validates specialized role with colon notation (reviewer:security)', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const specialized = {
+      agents: [{ id: 'reviewer-sec', role: 'reviewer:security', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],
+    };
+    expect(validate(specialized)).toBe(true);
+  });
+
+  it('validates agent entry with optional specialization and brief fields', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const withSpec = {
+      agents: [{
+        id: 'reviewer-sec', role: 'reviewer:security', status: 'ACTIVE',
+        specialization: 'security', brief: 'Focus on auth and injection attacks.',
+        current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null,
+      }],
+    };
+    expect(validate(withSpec)).toBe(true);
+  });
+
+  it('validates agent entry with null specialization and brief', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const withNull = {
+      agents: [{
+        id: 'dev-1', role: 'developer', status: 'ACTIVE',
+        specialization: null, brief: null,
+        current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null,
+      }],
+    };
+    expect(validate(withNull)).toBe(true);
+  });
+
+  it('rejects invalid base role in specialized notation', () => {
+    const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
+    const bad = {
+      agents: [{ id: 'x', role: 'manager:security', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],
+    };
+    expect(validate(bad)).toBe(false);
+  });
+
+  it('rejects invalid role (no colon, not a base role)', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
       agents: [{ id: 'x', role: 'manager', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],

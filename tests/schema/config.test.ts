@@ -151,9 +151,13 @@ describe('state machine alignment', () => {
     }
   });
 
-  it('agent registry roles in schema match hive.md agent spawn section', () => {
+  it('agent registry base roles from schema pattern appear in hive.md', () => {
     const agentSchema = loadSchema('agent-registry.schema.json');
-    const roles: string[] = agentSchema.properties.agents.items.properties.role.enum;
+    const rolePattern: string = agentSchema.properties.agents.items.properties.role.pattern;
+    // Extract base roles from the pattern: ^(developer|reviewer|tester|researcher|monitor)(:[a-z]...)?$
+    const baseRolesMatch = rolePattern.match(/\(([^)]+)\)/);
+    expect(baseRolesMatch).not.toBeNull();
+    const roles = baseRolesMatch![1].split('|');
 
     const hiveMd = readFileSync(
       join(ROOT, 'plugins/hive/agents/hive.md'),
@@ -163,7 +167,7 @@ describe('state machine alignment', () => {
     for (const role of roles) {
       expect(
         hiveMd,
-        `Agent role "${role}" from schema not found in hive.md`,
+        `Agent base role "${role}" from schema not found in hive.md`,
       ).toContain(role);
     }
   });

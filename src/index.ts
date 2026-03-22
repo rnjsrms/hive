@@ -44,6 +44,12 @@ export {
 } from './bootstrap.js';
 export { validateTransition, type TransitionResult } from './validate-transition.js';
 export {
+  DEFAULT_SPECIALIZATIONS,
+  DEFAULT_ROLE_CATALOG,
+  type Specialization,
+  type RoleCatalog,
+} from './role-catalog-defaults.js';
+export {
   buildPrBody,
   buildPrTitle,
   buildPrCreateCommand,
