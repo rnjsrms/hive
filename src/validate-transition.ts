@@ -71,6 +71,8 @@ export function validateTransition(
 
     return { valid: true, message: '' };
   } catch {
+    // Intentional: hooks must not crash on unexpected input.
+    // Swallow errors and allow the write to proceed.
     return { valid: true, message: '' };
   }
 }

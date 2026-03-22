@@ -147,9 +147,9 @@ export function buildPrCommentCommand(
     side: 'RIGHT',
   };
 
-  const escapedPayload = JSON.stringify(JSON.stringify(payload));
+  const payloadJson = JSON.stringify(payload);
 
-  const command = `gh api repos/${owner}/${repo}/pulls/${prNumber}/comments -X POST --input - <<< ${escapedPayload}`;
+  const command = `printf '%s' '${payloadJson.replace(/'/g, "'\\''")}' | gh api repos/${owner}/${repo}/pulls/${prNumber}/comments -X POST --input -`;
 
   return {
     command,

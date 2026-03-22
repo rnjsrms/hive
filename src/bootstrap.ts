@@ -110,7 +110,7 @@ export function initializeHive(rootDir: string, fs: FsOps): InitResult {
 
   for (const [file, content] of Object.entries(getRequiredFiles())) {
     const path = `${hiveDir}/${file}`;
-    fs.writeFileSync(path, JSON.stringify(content));
+    fs.writeFileSync(path, JSON.stringify(content, null, 2) + '\n');
     files.push(file);
   }
 
