@@ -51,10 +51,11 @@ const expectedFiles = [
   'hive-reviewer.md',
   'hive-tester.md',
   'hive-researcher.md',
+  'hive-monitor.md',
 ];
 
 describe('Agent frontmatter', () => {
-  it('has exactly 5 agent markdown files', () => {
+  it('has exactly 6 agent markdown files', () => {
     expect(agentFiles.sort()).toEqual(expectedFiles.sort());
   });
 
