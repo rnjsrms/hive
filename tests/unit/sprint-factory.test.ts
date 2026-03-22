@@ -214,6 +214,22 @@ describe('createSprint', () => {
     expect(index.items[1]).toEqual({ id: 'sprint-2', status: 'IN_PROGRESS' });
   });
 
+  it('should include correct branch field', () => {
+    const { fs } = seedSprintFs();
+    const sprint = createSprint(BASE_SPRINT_CONFIG, '/h', fs);
+    expect(sprint.branch).toBe('sprint/sprint-1');
+  });
+
+  it('should use custom branch when provided in config', () => {
+    const { fs } = seedSprintFs();
+    const sprint = createSprint(
+      { ...BASE_SPRINT_CONFIG, branch: 'sprint/sprint-42' },
+      '/h',
+      fs,
+    );
+    expect(sprint.branch).toBe('sprint/sprint-42');
+  });
+
   it('should produce an object matching sprint schema structure', () => {
     const { fs } = seedSprintFs();
     const sprint = createSprint(
@@ -227,6 +243,7 @@ describe('createSprint', () => {
     expect(sprint).toHaveProperty('name');
     expect(sprint).toHaveProperty('status');
     expect(sprint).toHaveProperty('plan');
+    expect(sprint).toHaveProperty('branch');
     expect(sprint).toHaveProperty('created_at');
     expect(sprint).toHaveProperty('updated_at');
     expect(sprint).toHaveProperty('work_items');
