@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["specializations"],
+  "properties": {
+    "specializations": { "type": "array", "items": {
+      "type": "object",
+      "required": ["name", "base_role", "triggers", "brief", "model"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "base_role": { "type": "string", "enum": ["developer", "reviewer", "tester", "researcher"] },
+        "triggers": { "type": "array", "items": { "type": "string", "pattern": "^(tag|type|risk):[a-z][a-z0-9-]*$" }, "minItems": 1 },
+        "brief": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "enum": ["opus", "sonnet", "haiku"] }
+      },
+      "additionalProperties": false
+    }}
+  },
+  "additionalProperties": false
+}

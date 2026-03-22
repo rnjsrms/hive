@@ -45,7 +45,7 @@ for (const file of agentFiles) {
   agents[file] = parseFrontmatter(content);
 }
 
-const expectedFiles = [
+const MINIMUM_REQUIRED_FILES = [
   'hive.md',
   'hive-developer.md',
   'hive-reviewer.md',
@@ -55,11 +55,17 @@ const expectedFiles = [
 ];
 
 describe('Agent frontmatter', () => {
-  it('has exactly 6 agent markdown files', () => {
-    expect(agentFiles.sort()).toEqual(expectedFiles.sort());
+  it('has all required agent markdown files', () => {
+    for (const file of MINIMUM_REQUIRED_FILES) {
+      expect(agentFiles, `Missing required agent file: ${file}`).toContain(file);
+    }
   });
 
-  describe.each(expectedFiles)('%s', (file) => {
+  it('has at least 6 agent markdown files', () => {
+    expect(agentFiles.length).toBeGreaterThanOrEqual(6);
+  });
+
+  describe.each(agentFiles)('%s', (file) => {
     it('has valid YAML frontmatter', () => {
       expect(agents[file]).toBeDefined();
       expect(typeof agents[file]).toBe('object');

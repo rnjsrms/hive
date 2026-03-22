@@ -1,3 +1,5 @@
+import { DEFAULT_ROLE_CATALOG } from './role-catalog-defaults.js';
+
 export interface FsOps {
   existsSync(path: string): boolean;
   mkdirSync(path: string, options?: { recursive?: boolean }): void;
@@ -44,12 +46,13 @@ export function getRequiredDirs(): string[] {
  */
 export function getRequiredFiles(): Record<string, object> {
   return {
-    'config.json': { name: 'hive', version: '2.0.0', base_branch: 'master' },
+    'config.json': { name: 'hive', version: '2.1.0', base_branch: 'master' },
     'work-items/_index.json': { items: [] },
     'work-items/_sequence.json': { next_id: 1 },
     'sprints/_index.json': { items: [] },
     'sprints/_sequence.json': { next_id: 1 },
     'agents/_index.json': { agents: [] },
+    'role-catalog.json': DEFAULT_ROLE_CATALOG,
   };
 }
 

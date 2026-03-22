@@ -74,14 +74,14 @@ describe('getRequiredDirs', () => {
 // ---------------------------------------------------------------------------
 
 describe('getRequiredFiles', () => {
-  it('returns 6 required state files', () => {
+  it('returns 7 required state files (includes role-catalog.json)', () => {
     const files = getRequiredFiles();
-    expect(Object.keys(files)).toHaveLength(6);
+    expect(Object.keys(files)).toHaveLength(7);
   });
 
   it('includes config.json', () => {
     const files = getRequiredFiles();
-    expect(files['config.json']).toEqual({ name: 'hive', version: '2.0.0', base_branch: 'master' });
+    expect(files['config.json']).toEqual({ name: 'hive', version: '2.1.0', base_branch: 'master' });
   });
 
   it('includes work-items index and sequence', () => {
@@ -99,6 +99,15 @@ describe('getRequiredFiles', () => {
   it('includes agents index', () => {
     const files = getRequiredFiles();
     expect(files['agents/_index.json']).toEqual({ agents: [] });
+  });
+
+  it('includes role-catalog.json with default specializations', () => {
+    const files = getRequiredFiles();
+    const catalog = files['role-catalog.json'] as { specializations: unknown[] };
+    expect(catalog).toBeDefined();
+    expect(catalog.specializations).toBeDefined();
+    expect(Array.isArray(catalog.specializations)).toBe(true);
+    expect(catalog.specializations.length).toBeGreaterThan(0);
   });
 
   it('all values are valid JSON-serializable objects', () => {
@@ -225,12 +234,15 @@ describe('initializeHive', () => {
 
   it('creates all state files with correct content', () => {
     initializeHive('/project', fs);
-    expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.0.0', base_branch: 'master' });
+    expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.1.0', base_branch: 'master' });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_index.json'])).toEqual({ items: [] });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_sequence.json'])).toEqual({ next_id: 1 });
     expect(JSON.parse(fs.files['/project/.hive/sprints/_index.json'])).toEqual({ items: [] });
     expect(JSON.parse(fs.files['/project/.hive/sprints/_sequence.json'])).toEqual({ next_id: 1 });
     expect(JSON.parse(fs.files['/project/.hive/agents/_index.json'])).toEqual({ agents: [] });
+    const catalog = JSON.parse(fs.files['/project/.hive/role-catalog.json']);
+    expect(catalog.specializations).toBeDefined();
+    expect(catalog.specializations.length).toBe(5);
   });
 
   it('creates empty log files', () => {
@@ -278,12 +290,13 @@ describe('validateState', () => {
     fs.dirs.add('/project/.hive/work-items');
     fs.dirs.add('/project/.hive/sprints');
     fs.dirs.add('/project/.hive/agents');
-    fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.0.0","base_branch":"master"}';
+    fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.1.0","base_branch":"master"}';
     fs.files['/project/.hive/work-items/_index.json'] = '{"items":[]}';
     fs.files['/project/.hive/work-items/_sequence.json'] = '{"next_id":1}';
     fs.files['/project/.hive/sprints/_index.json'] = '{"items":[]}';
     fs.files['/project/.hive/sprints/_sequence.json'] = '{"next_id":1}';
     fs.files['/project/.hive/agents/_index.json'] = '{"agents":[]}';
+    fs.files['/project/.hive/role-catalog.json'] = '{"specializations":[]}';
   });
 
   it('returns valid for a correct .hive directory', () => {
