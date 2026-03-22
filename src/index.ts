@@ -43,3 +43,19 @@ export {
   type ValidationWarning,
 } from './bootstrap.js';
 export { validateTransition, type TransitionResult } from './validate-transition.js';
+export {
+  buildPrBody,
+  buildPrTitle,
+  buildPrCreateCommand,
+  buildPrReviewCommand,
+  buildPrCommentCommand,
+  validateSprintPrConfig,
+  checkPrerequisites,
+  type SprintPrConfig,
+  type SprintWorkItemSummary,
+  type PrCreateCommand,
+  type ReviewComment,
+  type PrReviewCommand,
+  type PrCommentCommand,
+  type PrerequisiteCheck,
+} from './sprint-pr.js';
