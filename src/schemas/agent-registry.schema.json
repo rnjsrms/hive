@@ -8,7 +8,7 @@
       "required": ["id", "role", "status", "current_work_item", "sprint_id", "last_heartbeat"],
       "properties": {
         "id": { "type": "string" },
-        "role": { "type": "string", "enum": ["developer", "reviewer", "tester", "researcher"] },
+        "role": { "type": "string", "enum": ["developer", "reviewer", "tester", "researcher", "monitor"] },
         "status": { "type": "string", "enum": ["ACTIVE", "IDLE", "BLOCKED", "COMPLETED", "STOPPED", "DEAD"] },
         "current_work_item": { "type": ["string", "null"] },
         "sprint_id": { "type": "string" },
