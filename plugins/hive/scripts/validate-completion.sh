@@ -51,6 +51,6 @@ try {
     process.exit(2);
   }
 } catch (e) { process.stderr.write('hive-hook: ' + e.message + '\n'); }
-" "$HIVE_DIR" 2>/dev/null
+" "$HIVE_DIR"
 
 exit $?

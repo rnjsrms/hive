@@ -81,7 +81,7 @@ describe('getRequiredFiles', () => {
 
   it('includes config.json', () => {
     const files = getRequiredFiles();
-    expect(files['config.json']).toEqual({ name: 'hive', version: '2.1.0', base_branch: 'master' });
+    expect(files['config.json']).toEqual({ name: 'hive', version: '2.1.1', base_branch: 'master' });
   });
 
   it('includes work-items index and sequence', () => {
@@ -234,7 +234,7 @@ describe('initializeHive', () => {
 
   it('creates all state files with correct content', () => {
     initializeHive('/project', fs);
-    expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.1.0', base_branch: 'master' });
+    expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.1.1', base_branch: 'master' });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_index.json'])).toEqual({ items: [] });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_sequence.json'])).toEqual({ next_id: 1 });
     expect(JSON.parse(fs.files['/project/.hive/sprints/_index.json'])).toEqual({ items: [] });
@@ -290,7 +290,7 @@ describe('validateState', () => {
     fs.dirs.add('/project/.hive/work-items');
     fs.dirs.add('/project/.hive/sprints');
     fs.dirs.add('/project/.hive/agents');
-    fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.1.0","base_branch":"master"}';
+    fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.1.1","base_branch":"master"}';
     fs.files['/project/.hive/work-items/_index.json'] = '{"items":[]}';
     fs.files['/project/.hive/work-items/_sequence.json'] = '{"next_id":1}';
     fs.files['/project/.hive/sprints/_index.json'] = '{"items":[]}';
