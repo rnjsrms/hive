@@ -15,7 +15,7 @@ import { buildTaskChangeEntry } from '../../src/log-task-change.js';
 import { shouldAutoCommit } from '../../src/auto-commit.js';
 import { validateCompletion, type FsOps } from '../../src/validate-completion.js';
 import { VALID_TRANSITIONS } from '../../src/state-machine.js';
-import { getRequiredDirs } from '../../src/bootstrap.js';
+import { getRequiredDirs, getRequiredFiles } from '../../src/bootstrap.js';
 
 const hasBash = (() => {
   try {
@@ -288,5 +288,56 @@ describe('module-script mirror: bootstrap dirs', () => {
 
     const tsDirs = getRequiredDirs().sort();
     expect(scriptDirs).toEqual(tsDirs);
+  });
+});
+
+describeIf('module-script mirror: bootstrap required files', () => {
+  it('should create all required files including role-catalog.json', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-bootstrap-'));
+    try {
+      execSync(`bash "${path.join(SCRIPTS_DIR, 'bootstrap.sh')}"`, {
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+
+      // Verify all required files from bootstrap.ts exist
+      const requiredFiles = Object.keys(getRequiredFiles());
+      for (const file of requiredFiles) {
+        const filePath = path.join(tmpDir, '.hive', file);
+        expect(fs.existsSync(filePath), `Missing required file: ${file}`).toBe(true);
+        // Verify valid JSON
+        const content = fs.readFileSync(filePath, 'utf8');
+        expect(() => JSON.parse(content), `Invalid JSON in ${file}`).not.toThrow();
+      }
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should validate role-catalog.json in existing .hive/', () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-bootstrap-'));
+    const hiveDir = path.join(tmpDir, '.hive');
+    fs.mkdirSync(path.join(hiveDir, 'work-items'), { recursive: true });
+    fs.mkdirSync(path.join(hiveDir, 'sprints'), { recursive: true });
+    fs.mkdirSync(path.join(hiveDir, 'agents'), { recursive: true });
+    fs.writeFileSync(path.join(hiveDir, 'work-items', '_index.json'), '{"items":[]}');
+    fs.writeFileSync(path.join(hiveDir, 'work-items', '_sequence.json'), '{"next_id":1}');
+    fs.writeFileSync(path.join(hiveDir, 'sprints', '_index.json'), '{"items":[]}');
+    fs.writeFileSync(path.join(hiveDir, 'sprints', '_sequence.json'), '{"next_id":1}');
+    fs.writeFileSync(path.join(hiveDir, 'agents', '_index.json'), '{"agents":[]}');
+    fs.writeFileSync(path.join(hiveDir, 'config.json'), '{"name":"hive","version":"2.1.1","base_branch":"master"}');
+    // Intentionally omit role-catalog.json
+    try {
+      const result = execSync(`bash "${path.join(SCRIPTS_DIR, 'bootstrap.sh')}"`, {
+        env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
+        stdio: ['pipe', 'pipe', 'pipe'],
+        timeout: 10000,
+      });
+      const output = result.toString();
+      expect(output).toContain('missing role-catalog.json');
+    } finally {
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
   });
 });
