@@ -42,7 +42,7 @@ All agents prefix messages with `[hive:{role}]` or `[hive:{role}-{n}]`. Every me
 
 Statuses: OPEN, ASSIGNED, IN_PROGRESS, REVIEW, APPROVED, CHANGES_REQUESTED, TESTING, TESTS_FAILED, READY_TO_MERGE, BLOCKED, MERGED, CANCELLED.
 
-OPEN -> ASSIGNED -> IN_PROGRESS -> REVIEW -> APPROVED -> TESTING -> READY_TO_MERGE -> MERGED. Loops: CHANGES_REQUESTED -> IN_PROGRESS, TESTS_FAILED -> IN_PROGRESS. BLOCKED -> IN_PROGRESS on resolution. CANCELLED from any non-terminal state.
+OPEN -> ASSIGNED -> IN_PROGRESS -> REVIEW -> APPROVED -> TESTING -> READY_TO_MERGE -> MERGED. The lead auto-merges READY_TO_MERGE WIs to the sprint branch immediately -- no user confirmation needed for individual WI merges. Loops: CHANGES_REQUESTED -> IN_PROGRESS, TESTS_FAILED -> IN_PROGRESS. BLOCKED -> IN_PROGRESS on resolution. CANCELLED from any non-terminal state.
 
 Sprint statuses: PLANNING, IN_PROGRESS, AGENTS_COMPLETE, MERGED, CANCELLED.
 
