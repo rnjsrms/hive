@@ -26,7 +26,7 @@ for (const f of files) {
 }
 if (warnings > 0) process.stderr.write('hive-bootstrap: ' + warnings + ' warning(s)\n');
 else process.stderr.write('hive-bootstrap: state valid\n');
-" "$HIVE_DIR" 2>&1 || true
+" "$HIVE_DIR" || true
 else
   # Auto-detect default branch (fallback to master)
   BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||')

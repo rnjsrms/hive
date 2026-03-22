@@ -330,8 +330,8 @@ describeIf('module-script mirror: bootstrap required files', () => {
     fs.writeFileSync(path.join(hiveDir, 'config.json'), '{"name":"hive","version":"2.1.1","base_branch":"master"}');
     // Intentionally omit role-catalog.json
     try {
-      // bootstrap.sh merges stderr→stdout via 2>&1 and uses || true, so it always exits 0
-      const result = execSync(`bash "${path.join(SCRIPTS_DIR, 'bootstrap.sh')}"`, {
+      // bootstrap.sh uses || true so it always exits 0; warnings go to stderr
+      const result = execSync(`bash "${path.join(SCRIPTS_DIR, 'bootstrap.sh')}" 2>&1`, {
         env: { ...process.env, CLAUDE_PROJECT_DIR: tmpDir },
         stdio: ['pipe', 'pipe', 'pipe'],
         timeout: 10000,
