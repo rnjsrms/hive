@@ -100,6 +100,7 @@ describe('Sprint schema', () => {
     name: 'Login Feature',
     status: 'IN_PROGRESS',
     plan: 'plan-2025-01-01.md',
+    branch: 'sprint/sprint-1',
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
     work_items: ['wi-1', 'wi-2'],

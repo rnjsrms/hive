@@ -23,6 +23,7 @@ export interface SprintConfig {
   name: string;
   plan: string;
   agents?: string[];
+  branch?: string;
   timestamp?: string;
 }
 
@@ -42,6 +43,7 @@ export interface SprintData {
   name: string;
   status: 'PLANNING' | 'IN_PROGRESS' | 'AGENTS_COMPLETE' | 'MERGED' | 'CANCELLED';
   plan: string;
+  branch: string;
   created_at: string;
   updated_at: string;
   work_items: string[];
@@ -124,6 +126,7 @@ export function createSprint(
     name: config.name,
     status: 'IN_PROGRESS',
     plan: config.plan,
+    branch: config.branch ?? `sprint/${id}`,
     created_at: now,
     updated_at: now,
     work_items: [],
