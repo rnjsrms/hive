@@ -23,6 +23,7 @@ export interface SprintConfig {
   name: string;
   plan: string;
   agents?: string[];
+  timestamp?: string;
 }
 
 export interface WorkItemConfig {
@@ -33,6 +34,7 @@ export interface WorkItemConfig {
   description: string;
   acceptance_criteria: string[];
   dependencies?: string[];
+  timestamp?: string;
 }
 
 export interface SprintData {
@@ -116,7 +118,7 @@ export function createSprint(
     throw new Error(`Sprint file already exists: ${filePath}`);
   }
 
-  const now = new Date().toISOString();
+  const now = config.timestamp ?? new Date().toISOString();
   const sprint: SprintData = {
     id,
     name: config.name,
@@ -160,7 +162,7 @@ export function createWorkItem(
     throw new Error(`Work item file already exists: ${filePath}`);
   }
 
-  const now = new Date().toISOString();
+  const now = config.timestamp ?? new Date().toISOString();
   const wi: WorkItemData = {
     id,
     title: config.title,
