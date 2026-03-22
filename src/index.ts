@@ -15,3 +15,47 @@ export {
   type ValidationResult,
 } from './validate-completion.js';
 export { buildActivityEntry, type ActivityEntry } from './log-activity.js';
+export { isValidTransition, VALID_TRANSITIONS, type WorkItemStatus } from './state-machine.js';
+export {
+  createSprint,
+  createWorkItem,
+  getNextId,
+  incrementSequence,
+  type FsOps as SprintFactoryFsOps,
+  type SequenceData,
+  type SprintConfig,
+  type SprintData,
+  type WorkItemConfig,
+  type WorkItemData,
+} from './sprint-factory.js';
+export {
+  getRequiredDirs,
+  getRequiredFiles,
+  validateStateFile,
+  validateWorkItemRefs,
+  initializeHive,
+  validateState,
+  type FsOps as BootstrapFsOps,
+  type InitResult,
+  type StateFileValidation,
+  type WorkItemRefValidation,
+  type ValidationResult as BootstrapValidationResult,
+  type ValidationWarning,
+} from './bootstrap.js';
+export { validateTransition, type TransitionResult } from './validate-transition.js';
+export {
+  buildPrBody,
+  buildPrTitle,
+  buildPrCreateCommand,
+  buildPrReviewCommand,
+  buildPrCommentCommand,
+  validateSprintPrConfig,
+  checkPrerequisites,
+  type SprintPrConfig,
+  type SprintWorkItemSummary,
+  type PrCreateCommand,
+  type ReviewComment,
+  type PrReviewCommand,
+  type PrCommentCommand,
+  type PrerequisiteCheck,
+} from './sprint-pr.js';

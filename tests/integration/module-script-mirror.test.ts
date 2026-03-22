@@ -14,6 +14,8 @@ import { buildCommunicationEntry } from '../../src/log-communication.js';
 import { buildTaskChangeEntry } from '../../src/log-task-change.js';
 import { shouldAutoCommit } from '../../src/auto-commit.js';
 import { validateCompletion, type FsOps } from '../../src/validate-completion.js';
+import { VALID_TRANSITIONS } from '../../src/state-machine.js';
+import { getRequiredDirs } from '../../src/bootstrap.js';
 
 const hasBash = (() => {
   try {
@@ -236,5 +238,55 @@ describeIf('module-script mirror: validate-completion', () => {
     } finally {
       fs.rmSync(tmpDir, { recursive: true, force: true });
     }
+  });
+});
+
+describe('module-script mirror: validate-transition VALID_TRANSITIONS', () => {
+  it('should have identical transition maps in state-machine.ts and validate-transition.sh', () => {
+    const scriptContent = fs.readFileSync(
+      path.join(SCRIPTS_DIR, 'validate-transition.sh'),
+      'utf8',
+    );
+
+    // Extract the VALID_TRANSITIONS object from the shell script's inline JS
+    const match = scriptContent.match(/const VALID_TRANSITIONS = \{([\s\S]*?)\};/);
+    expect(match).not.toBeNull();
+
+    // Evaluate the extracted map in a sandboxed context
+    const scriptMap: Record<string, string[]> = new Function(
+      `const VALID_TRANSITIONS = {${match![1]}}; return VALID_TRANSITIONS;`,
+    )();
+
+    // Compare every key and value
+    const tsKeys = Object.keys(VALID_TRANSITIONS).sort();
+    const shKeys = Object.keys(scriptMap).sort();
+    expect(shKeys).toEqual(tsKeys);
+
+    for (const key of tsKeys) {
+      expect(scriptMap[key].sort()).toEqual(
+        [...VALID_TRANSITIONS[key as keyof typeof VALID_TRANSITIONS]].sort(),
+      );
+    }
+  });
+});
+
+describe('module-script mirror: bootstrap dirs', () => {
+  it('should have matching directory lists in bootstrap.ts and bootstrap.sh', () => {
+    const scriptContent = fs.readFileSync(
+      path.join(SCRIPTS_DIR, 'bootstrap.sh'),
+      'utf8',
+    );
+
+    // Extract mkdir -p directories from bootstrap.sh
+    const mkdirMatch = scriptContent.match(/mkdir -p([\s\S]*?)(?:\n\n|\n\s*\n|\n\s*printf)/);
+    expect(mkdirMatch).not.toBeNull();
+
+    const dirMatches = mkdirMatch![1].match(/\$HIVE_DIR\/(\w[\w-]*)/g) || [];
+    const scriptDirs = dirMatches
+      .map(d => d.replace('$HIVE_DIR/', ''))
+      .sort();
+
+    const tsDirs = getRequiredDirs().sort();
+    expect(scriptDirs).toEqual(tsDirs);
   });
 });

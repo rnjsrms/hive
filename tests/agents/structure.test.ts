@@ -33,10 +33,10 @@ describe('Agent markdown structure', () => {
 
     it('has a Communication Protocol section (or Shared Protocol for lead)', () => {
       // Worker agents use "## Communication Protocol"
-      // Lead agent (hive.md) uses "## Phase 6: Shared Protocol" which covers communication
+      // Lead agent (hive.md) uses "## Shared Protocol" which covers communication
       const hasCommunicationSection =
         content.includes('## Communication Protocol') ||
-        content.includes('## Phase 6: Shared Protocol');
+        content.includes('## Shared Protocol');
       expect(hasCommunicationSection).toBe(true);
     });
 
@@ -72,9 +72,9 @@ describe('Agent markdown structure', () => {
 describe('hive.md invariants (Phase 8 safety contract)', () => {
   const leadContent = agentContents['hive.md'];
 
-  it('contains exactly 10 numbered invariants in Phase 8 section', () => {
-    // Extract only the Phase 8 section (between "## Phase 8: Invariants" and the next "## " or end)
-    const phase8Match = leadContent.match(/## Phase 8: Invariants[\s\S]*?(?=\n---|\n## [^#]|$)/);
+  it('contains exactly 10 numbered invariants in Invariants section', () => {
+    // Extract the Invariants section (between "## Invariants" and the next "## " or end)
+    const phase8Match = leadContent.match(/## Invariants[\s\S]*?(?=\n---|\n## [^#]|$)/);
     expect(phase8Match).not.toBeNull();
     const phase8 = phase8Match![0];
     const invariantMatches = phase8.match(/^\d+\.\s+\*\*.+\*\*/gm);
@@ -86,8 +86,8 @@ describe('hive.md invariants (Phase 8 safety contract)', () => {
     expect(leadContent).toContain('Lead never writes production code');
   });
 
-  it('invariant 2: workers restricted from index/sequence/convoy files (ISS-13 updated)', () => {
-    expect(leadContent).toMatch(/Workers never modify index.*sequence.*convoy/i);
+  it('invariant 2: workers restricted from index/sequence/sprint files (ISS-13 updated)', () => {
+    expect(leadContent).toMatch(/Workers never modify index.*sequence.*sprint/i);
     // ISS-13 fix: workers MAY update their own wi-*.json
     expect(leadContent).toContain('wi-*.json');
   });
