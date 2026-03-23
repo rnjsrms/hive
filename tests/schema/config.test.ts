@@ -354,7 +354,6 @@ describe('hive.md bootstrap structure validation', () => {
     const requiredFiles = [
       'config.json',
       '_index.json',
-      '_sequence.json',
       'activity.jsonl',
       'communications.jsonl',
       'task-ledger.jsonl',

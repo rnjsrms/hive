@@ -2,10 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createFeature,
   createWorkItem,
-  getNextId,
-  incrementSequence,
   type FsOps,
-  type SequenceData,
   type FeatureConfig,
   type FeatureData,
   type WorkItemConfig,
@@ -63,46 +60,6 @@ const BASE_WI_CONFIG: WorkItemConfig = {
   description: 'Build feature X',
   acceptance_criteria: ['It works', 'Tests pass'],
 };
-
-// ---------------------------------------------------------------------------
-// getNextId
-// ---------------------------------------------------------------------------
-
-describe('getNextId', () => {
-  it('should return the next_id from sequence data', () => {
-    const seq: SequenceData = { next_id: 1 };
-    expect(getNextId(seq)).toBe(1);
-  });
-
-  it('should return high sequence numbers', () => {
-    const seq: SequenceData = { next_id: 999 };
-    expect(getNextId(seq)).toBe(999);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// incrementSequence
-// ---------------------------------------------------------------------------
-
-describe('incrementSequence', () => {
-  it('should return a new sequence with incremented next_id', () => {
-    const seq: SequenceData = { next_id: 1 };
-    const result = incrementSequence(seq);
-    expect(result).toEqual({ next_id: 2 });
-  });
-
-  it('should not mutate the original sequence', () => {
-    const seq: SequenceData = { next_id: 5 };
-    const result = incrementSequence(seq);
-    expect(seq.next_id).toBe(5);
-    expect(result.next_id).toBe(6);
-  });
-
-  it('should handle large sequence numbers', () => {
-    const seq: SequenceData = { next_id: 1000 };
-    expect(incrementSequence(seq)).toEqual({ next_id: 1001 });
-  });
-});
 
 // ---------------------------------------------------------------------------
 // createFeature
@@ -465,6 +422,43 @@ describe('createWorkItem', () => {
     const { fs } = seedWorkItemFs();
     expect(() => createWorkItem({ ...BASE_WI_CONFIG, feature: 'lowercase-1' }, '/h', fs))
       .toThrow(/Invalid feature/);
+  });
+
+  it('should throw when feature has next_wi_id: 0', () => {
+    const files: Record<string, string> = {
+      '/h/work-items/_index.json': JSON.stringify({ items: [] }),
+      '/h/features/TEST-1.json': JSON.stringify({
+        id: 'TEST-1', name: 'Test', status: 'IN_PROGRESS',
+        plan: 'test.md', branch: 'feature/TEST-1',
+        created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
+        work_items: [], agents: [], next_wi_id: 0
+      }),
+    };
+    const fs = makeFsOps(files);
+    expect(() => createWorkItem(BASE_WI_CONFIG, '/h', fs)).toThrow(/Invalid next_wi_id/);
+  });
+
+  it('should throw when feature has non-integer next_wi_id', () => {
+    const files: Record<string, string> = {
+      '/h/work-items/_index.json': JSON.stringify({ items: [] }),
+      '/h/features/TEST-1.json': JSON.stringify({
+        id: 'TEST-1', name: 'Test', status: 'IN_PROGRESS',
+        plan: 'test.md', branch: 'feature/TEST-1',
+        created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
+        work_items: [], agents: [], next_wi_id: 1.5
+      }),
+    };
+    const fs = makeFsOps(files);
+    expect(() => createWorkItem(BASE_WI_CONFIG, '/h', fs)).toThrow(/Invalid next_wi_id/);
+  });
+
+  it('should add the new WI id to the feature work_items array', () => {
+    const { files, fs } = seedWorkItemFs();
+    const wi = createWorkItem(BASE_WI_CONFIG, '/h', fs);
+
+    const feature = JSON.parse(files['/h/features/TEST-1.json']);
+    expect(feature.work_items).toContain(wi.id);
+    expect(feature.work_items).toEqual(['TEST-1_WI-1']);
   });
 
   it('should produce an object matching work-item schema structure', () => {

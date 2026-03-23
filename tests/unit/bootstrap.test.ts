@@ -74,9 +74,9 @@ describe('getRequiredDirs', () => {
 // ---------------------------------------------------------------------------
 
 describe('getRequiredFiles', () => {
-  it('returns 6 required state files (includes role-catalog.json)', () => {
+  it('returns 5 required state files (includes role-catalog.json)', () => {
     const files = getRequiredFiles();
-    expect(Object.keys(files)).toHaveLength(6);
+    expect(Object.keys(files)).toHaveLength(5);
   });
 
   it('includes config.json', () => {
@@ -84,10 +84,14 @@ describe('getRequiredFiles', () => {
     expect(files['config.json']).toEqual({ name: 'hive', version: '2.2.0', base_branch: 'develop' });
   });
 
-  it('includes work-items index and sequence', () => {
+  it('includes work-items index', () => {
     const files = getRequiredFiles();
     expect(files['work-items/_index.json']).toEqual({ items: [] });
-    expect(files['work-items/_sequence.json']).toEqual({ next_id: 1 });
+  });
+
+  it('does not include work-items/_sequence.json (replaced by per-feature next_wi_id)', () => {
+    const files = getRequiredFiles();
+    expect(files['work-items/_sequence.json']).toBeUndefined();
   });
 
   it('includes features index', () => {
@@ -235,7 +239,7 @@ describe('initializeHive', () => {
     initializeHive('/project', fs);
     expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.2.0', base_branch: 'develop' });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_index.json'])).toEqual({ items: [] });
-    expect(JSON.parse(fs.files['/project/.hive/work-items/_sequence.json'])).toEqual({ next_id: 1 });
+    expect(fs.files['/project/.hive/work-items/_sequence.json']).toBeUndefined();
     expect(JSON.parse(fs.files['/project/.hive/features/_index.json'])).toEqual({ items: [] });
     expect(JSON.parse(fs.files['/project/.hive/agents/_index.json'])).toEqual({ agents: [] });
     const catalog = JSON.parse(fs.files['/project/.hive/role-catalog.json']);
@@ -290,7 +294,6 @@ describe('validateState', () => {
     fs.dirs.add('/project/.hive/agents');
     fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.2.0","base_branch":"develop"}';
     fs.files['/project/.hive/work-items/_index.json'] = '{"items":[]}';
-    fs.files['/project/.hive/work-items/_sequence.json'] = '{"next_id":1}';
     fs.files['/project/.hive/features/_index.json'] = '{"items":[]}';
     fs.files['/project/.hive/agents/_index.json'] = '{"agents":[]}';
     fs.files['/project/.hive/role-catalog.json'] = '{"specializations":[]}';
@@ -414,5 +417,21 @@ describe('validateState', () => {
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     expect(result.warnings.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('warns about missing WI refs when work-items directory is missing', () => {
+    // Feature references WIs but work-items dir does not exist
+    fs.files['/project/.hive/features/TEST-1.json'] = JSON.stringify({
+      id: 'TEST-1',
+      work_items: ['TEST-1_WI-1', 'TEST-1_WI-2'],
+    });
+    // Remove work-items dir so it doesn't exist
+    fs.dirs.delete('/project/.hive/work-items');
+    delete fs.files['/project/.hive/work-items/_index.json'];
+    const result = validateState('/project', fs);
+    expect(result.valid).toBe(false);
+    // Should warn about dangling refs since no WI files exist
+    const wiWarnings = result.warnings.filter(w => w.message.includes('missing work item'));
+    expect(wiWarnings.length).toBe(2);
   });
 });
