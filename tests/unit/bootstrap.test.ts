@@ -81,7 +81,7 @@ describe('getRequiredFiles', () => {
 
   it('includes config.json', () => {
     const files = getRequiredFiles();
-    expect(files['config.json']).toEqual({ name: 'hive', version: '2.1.1', base_branch: 'master' });
+    expect(files['config.json']).toEqual({ name: 'hive', version: '2.2.0', base_branch: 'develop' });
   });
 
   it('includes work-items index and sequence', () => {
@@ -234,7 +234,7 @@ describe('initializeHive', () => {
 
   it('creates all state files with correct content', () => {
     initializeHive('/project', fs);
-    expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.1.1', base_branch: 'master' });
+    expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.2.0', base_branch: 'develop' });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_index.json'])).toEqual({ items: [] });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_sequence.json'])).toEqual({ next_id: 1 });
     expect(JSON.parse(fs.files['/project/.hive/features/_index.json'])).toEqual({ items: [] });
@@ -290,7 +290,7 @@ describe('validateState', () => {
     fs.dirs.add('/project/.hive/work-items');
     fs.dirs.add('/project/.hive/features');
     fs.dirs.add('/project/.hive/agents');
-    fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.1.1","base_branch":"master"}';
+    fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.2.0","base_branch":"develop"}';
     fs.files['/project/.hive/work-items/_index.json'] = '{"items":[]}';
     fs.files['/project/.hive/work-items/_sequence.json'] = '{"next_id":1}';
     fs.files['/project/.hive/features/_index.json'] = '{"items":[]}';
@@ -344,31 +344,31 @@ describe('validateState', () => {
   it('warns when feature references missing work item', () => {
     fs.files['/project/.hive/features/feature-1.json'] = JSON.stringify({
       id: 'feature-1',
-      work_items: ['wi-1', 'wi-2'],
+      work_items: ['feature-1_wi-1', 'feature-1_wi-2'],
     });
-    fs.files['/project/.hive/work-items/wi-1.json'] = JSON.stringify({ id: 'wi-1' });
-    // wi-2 is missing
+    fs.files['/project/.hive/work-items/feature-1_wi-1.json'] = JSON.stringify({ id: 'feature-1_wi-1' });
+    // feature-1_wi-2 is missing
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     expect(result.warnings).toContainEqual({
       file: 'features/feature-1.json',
-      message: 'References missing work item: wi-2',
+      message: 'References missing work item: feature-1_wi-2',
     });
   });
 
   it('does not warn when all feature work items exist', () => {
     fs.files['/project/.hive/features/feature-1.json'] = JSON.stringify({
       id: 'feature-1',
-      work_items: ['wi-1'],
+      work_items: ['feature-1_wi-1'],
     });
-    fs.files['/project/.hive/work-items/wi-1.json'] = JSON.stringify({ id: 'wi-1' });
+    fs.files['/project/.hive/work-items/feature-1_wi-1.json'] = JSON.stringify({ id: 'feature-1_wi-1' });
     const result = validateState('/project', fs);
     expect(result.valid).toBe(true);
   });
 
   it('warns on duplicate work item IDs', () => {
-    fs.files['/project/.hive/work-items/wi-1.json'] = JSON.stringify({ id: 'wi-1' });
-    fs.files['/project/.hive/work-items/wi-1-copy.json'] = JSON.stringify({ id: 'wi-1' });
+    fs.files['/project/.hive/work-items/feature-1_wi-1.json'] = JSON.stringify({ id: 'feature-1_wi-1' });
+    fs.files['/project/.hive/work-items/feature-2_wi-1.json'] = JSON.stringify({ id: 'feature-1_wi-1' });
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     const dupWarning = result.warnings.find(w => w.message.includes('Duplicate'));
@@ -376,11 +376,11 @@ describe('validateState', () => {
   });
 
   it('warns on invalid JSON in work item files', () => {
-    fs.files['/project/.hive/work-items/wi-1.json'] = 'not json';
+    fs.files['/project/.hive/work-items/feature-1_wi-1.json'] = 'not json';
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     expect(result.warnings).toContainEqual({
-      file: 'work-items/wi-1.json',
+      file: 'work-items/feature-1_wi-1.json',
       message: 'Invalid JSON',
     });
   });
@@ -413,7 +413,7 @@ describe('validateState', () => {
   it('accumulates multiple warnings', () => {
     delete fs.files['/project/.hive/work-items/_index.json'];
     fs.files['/project/.hive/features/_sequence.json'] = '{bad}';
-    fs.files['/project/.hive/work-items/wi-1.json'] = 'invalid';
+    fs.files['/project/.hive/work-items/feature-1_wi-1.json'] = 'invalid';
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     expect(result.warnings.length).toBeGreaterThanOrEqual(3);

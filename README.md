@@ -1,161 +1,283 @@
 # Hive
 
-Hive is a multi-agent orchestration framework for Claude Code. It enables a team of
-specialized AI agents to collaborate on software projects using structured workflows,
-shared state files, and git-based coordination. Give it an objective and it handles
-planning, task breakdown, implementation, review, and testing automatically.
+Hive is an AI-powered multi-agent system for Claude Code. You describe what you want to build, and Hive assembles a team of specialized AI agents that plan, code, review, test, and deliver it — all coordinated automatically.
 
-## Quick Start
+## Installation
 
 ```bash
-cd hive
+# Install the hive plugin for Claude Code
+claude plugin install ~/hive/plugins/hive --scope user
+
+# Or test it locally without installing
+claude --plugin-dir ~/hive/plugins/hive
+```
+
+Once installed, every `claude` session starts as the Hive lead agent. Just describe your objective and Hive takes it from there.
+
+## Your First Project
+
+```bash
+cd my-project
 claude
 ```
 
-Then describe your objective. The lead agent will interview you to clarify requirements,
-create a plan, spin up a team, and begin execution.
+Then type something like:
 
-## How the Workflow Works
+> "Add user authentication with JWT tokens, login/logout endpoints, and password hashing."
 
-1. **Interview** -- The lead agent asks clarifying questions about your objective to
-   understand scope, constraints, and priorities.
-2. **Plan** -- The lead spawns a Plan agent and Reviewer agent that iterate on a
-   structured plan until the reviewer approves. The lead asks you for input if needed,
-   then presents the final plan for your sign-off.
-3. **Team** -- Agents are spawned for each role (developers, reviewer, tester,
-   researcher) and registered in `.hive/agents/`.
-4. **Execute** -- The lead assigns work items to developers, who implement on feature
-   branches and update status in `.hive/work-items/`. All coordination goes through the lead.
-5. **Validate** -- The reviewer checks code quality and the tester runs verification.
-   Completion hooks enforce that items pass review and testing before merging.
+Hive will:
+1. Ask you 10-15 clarifying questions about scope, tech stack, and priorities
+2. Create a detailed plan broken into work items
+3. Spin up a team of agents (developers, reviewer, tester)
+4. Implement everything on isolated branches
+5. Review and test each piece
+6. Report when branches are ready for you to merge
 
-## Architecture
+You stay in control — Hive asks for your sign-off on the plan before writing any code, and you decide when to merge.
 
-Hive uses a role-based agent hierarchy:
+## How It Works
 
-| Role         | Responsibility                                          |
-|--------------|---------------------------------------------------------|
-| **Lead**     | Plans work, assigns tasks, coordinates the team. Only agent that talks to the user. |
-| **Developer**| Implements features on feature branches (worktree-isolated)  |
-| **Reviewer** | Reviews code, approves or requests changes              |
-| **Tester**   | Runs tests, verifies acceptance criteria (worktree-isolated) |
-| **Researcher**| Investigates unknowns, spikes, and technical questions |
+Hive follows a structured workflow with 7 phases:
 
-All agents communicate through structured messages and share state via `.hive/` files.
-The lead has absolute authority -- agents never self-assign work or act without lead instruction.
+### Phase 1: Interview
 
-## Gitflow
+The lead agent asks you questions to understand your objective.
 
-Agents only work on feature branches, never directly on main. The typical flow:
+```
+[hive:lead] Tell me about the feature you'd like to build.
+What framework are you using? Any authentication preferences?
+What's the priority — security, speed, or simplicity?
+```
 
-- Lead creates a feature branch for each work item (e.g., `feature/wi-{id}-{slug}`)
-- Developer implements on that branch
-- Reviewer and tester validate the branch
-- Lead marks branches as ready to merge when all checks pass
-- You merge into main at your discretion
+### Phase 2: Plan
+
+Hive spawns a researcher to investigate your codebase, then creates a detailed plan with work items.
+
+```
+[hive:lead] Here's the plan:
+
+Work Items:
+  WI-1: Add JWT token generation and validation
+  WI-2: Create login endpoint with password hashing
+  WI-3: Create logout endpoint with token blacklisting
+
+Shall I proceed?
+```
+
+### Phase 3: Team Spawn
+
+Hive creates a feature branch and assembles a team.
+
+```
+[hive:lead] Creating feature branch: feature-1
+Spawning monitor agent... ✓
+Spawning developer for feature-1_wi-1... ✓
+```
+
+### Phase 4: Execute
+
+Developers implement each work item on isolated branches. Each developer works in its own git worktree so there are no conflicts.
+
+```
+[hive:dev-1] [IN_PROGRESS] feature-1_wi-1: Implementing JWT token generation...
+[hive:dev-1] [REVIEW] feature-1_wi-1: Ready for review. Added token.ts with sign/verify functions and unit tests.
+```
+
+### Phase 5: Review & Test
+
+After each developer finishes, Hive automatically spawns a reviewer and then a tester.
+
+```
+[hive:reviewer] [APPROVED] feature-1_wi-1: Code quality is good. Token expiry handling is solid.
+[hive:tester] [TESTS_PASS] feature-1_wi-1: All 12 tests pass. Edge cases covered.
+```
+
+### Phase 6: Feature Complete
+
+When all work items pass review and testing, Hive creates a PR for you to merge.
+
+```
+[hive:lead] All work items merged to feature-1.
+Created PR #42: [hive] JWT Authentication (feature-1)
+  Base: develop ← Head: feature-1
+  Ready for your review and merge.
+```
+
+### Phase 7: Shutdown
+
+Hive gracefully shuts down all agents and archives the feature.
+
+## Agent Roles
+
+| Agent | What It Does | Model | Worktree? |
+|-------|-------------|-------|-----------|
+| **Lead** | Plans work, assigns tasks, coordinates the team. Only agent that talks to you. | opus | no |
+| **Developer** | Implements features and writes unit tests on isolated branches. | opus | yes |
+| **Reviewer** | Reviews code for bugs, security issues, and design problems. Runs `/simplify`. | opus | yes |
+| **Tester** | Writes additional tests, runs test suites, validates acceptance criteria. Attacks edge cases. | opus | yes |
+| **Researcher** | Investigates your codebase, researches APIs, finds reusable patterns. | opus | yes |
+| **Monitor** | Runs health checks every 5 minutes. Detects stuck or idle agents. | haiku | no |
+
+All agents except the monitor use the opus model for maximum quality. The monitor uses haiku because it only needs to read status files.
+
+Agents that make changes (code, tests, documents) work in isolated git worktrees so they don't interfere with each other. The monitor is read-only and doesn't need a worktree.
+
+## Branch Model
+
+Hive uses a three-level branch hierarchy:
+
+```
+develop                          ← base branch (your integration branch)
+  └── feature-1                  ← feature branch (created by Hive)
+        ├── feature-1_wi-1       ← work item branch (one per task)
+        ├── feature-1_wi-2
+        └── feature-1_wi-3
+  └── feature-2
+        ├── feature-2_wi-1       ← WI IDs restart at 1 per feature
+        └── feature-2_wi-2
+```
+
+**How it flows:**
+1. Lead creates `feature-1` from `develop`
+2. Developer creates `feature-1_wi-1` from `feature-1`
+3. Developer implements, reviewer reviews, tester tests
+4. Lead merges `feature-1_wi-1` back into `feature-1` (with `--no-ff`)
+5. Repeat for all work items
+6. Lead creates a PR from `feature-1` to `develop` — you merge it
+
+**Base branch detection:**
+Hive auto-detects your base branch in this order:
+1. `develop` (if it exists — standard git-flow)
+2. Your repo's default branch (auto-detected from remote)
+3. `main` (fallback)
+
+**Work item IDs are feature-scoped.** `feature-1_wi-1` and `feature-2_wi-1` are different work items. The compound ID (`feature-{id}_wi-{id}`) is globally unique.
 
 ## Checking Status
 
 All project state lives in `.hive/`:
 
-- `.hive/work-items/_index.json` -- list of all work items and their status
-- `.hive/features/_index.json` -- active execution groups
-- `.hive/agents/_index.json` -- registered agents and their roles
-- `.hive/plans/` -- planning documents
-- `.hive/research/` -- research findings from the researcher agent (topic-based markdown files)
-- `.hive/archive/` -- archived (completed or abandoned) features
-- `.hive/logs/activity.jsonl` -- work item state changes (hook-driven via `log-activity.sh`)
-- `.hive/logs/communications.jsonl` -- inter-agent messages with `from`, `to`, `summary` (hook-driven via `log-communication.sh`)
-- `.hive/logs/task-ledger.jsonl` -- task creation and update log (hook-driven via `log-task-change.sh`)
+```bash
+# See all work items and their status
+node -e "
+const items = require('./.hive/work-items/_index.json').items;
+items.forEach(i => console.log(i.id + ': ' + i.status));
+"
 
-## Resuming After a Crash
+# See the active feature
+cat .hive/features/_index.json
 
-If a session is interrupted, just start Claude again:
+# See registered agents
+cat .hive/agents/_index.json
+
+# See recent activity
+tail -5 .hive/logs/activity.jsonl
+```
+
+Or just ask the lead agent: *"What's the status?"*
+
+### What's in `.hive/`?
+
+```
+.hive/
+├── config.json              # Project config (name, version, base branch)
+├── role-catalog.json         # Reviewer specializations (security, performance, etc.)
+├── plans/                    # Planning documents
+├── research/                 # Research findings from the researcher agent
+├── work-items/               # Work item JSON files (one per task)
+│   ├── _index.json           # Summary of all work items
+│   ├── feature-1_wi-1.json   # Individual work item state
+│   └── feature-1_wi-2.json
+├── features/                 # Feature groupings
+│   ├── _index.json           # Summary of all features
+│   ├── _sequence.json        # Feature ID counter
+│   └── feature-1.json        # Feature state (includes WI counter)
+├── agents/                   # Agent registry
+│   └── _index.json           # Active agents and their roles
+├── logs/                     # Activity logs (auto-generated by hooks)
+│   ├── activity.jsonl        # Work item state changes
+│   ├── communications.jsonl  # Messages between agents
+│   └── task-ledger.jsonl     # Task creation/update log
+└── archive/                  # Completed or cancelled features
+```
+
+All state files are auto-committed to git by hooks — you never need to manage them manually.
+
+## Recovering from Crashes
+
+If a session is interrupted, just restart:
 
 ```bash
-cd hive
+cd my-project
 claude
 ```
 
-The lead agent detects in-progress features and work items by reading `.hive/` state
-files. It validates file integrity (skipping corrupt entries rather than crashing),
-handles multiple active features by picking the most recent, and resumes where it left
-off -- reassigning stalled work items and continuing the active plan.
+Hive detects in-progress features by reading `.hive/` state files. It validates file integrity, picks up the most recent active feature, and resumes — reassigning stalled work items and continuing the active plan.
 
-## Ready-to-Merge Branches
-
-When work items pass review and testing, the lead updates their status to
-`ready-to-merge`. Check for branches ready to merge:
-
-```bash
-cat .hive/work-items/_index.json | python3 -c "
-import json, sys
-items = json.load(sys.stdin).get('items', [])
-for i in items:
-    if i.get('status') == 'READY_TO_MERGE':
-        print(f\"{i.get('id')}: {i.get('title')} -> {i.get('branch')}\")
-"
+**Example:**
+```
+[hive:lead] Hive Orchestration System v2.2.0
+Initializing workspace...
+Detected in-progress feature: feature-1 (JWT Authentication)
+  WI-1: MERGED ✓
+  WI-2: IN_PROGRESS (stalled — reassigning)
+  WI-3: OPEN
+Resuming feature-1...
 ```
 
-Or simply ask the lead agent to list branches ready for merge.
+## Cancelling Work
 
-## Operational Guidance
+Ask the lead: *"Cancel the current feature."*
 
-### Stuck Work Items
+Hive will:
+1. Set all open/in-progress work items to `CANCELLED`
+2. Set the feature status to `CANCELLED`
+3. Shut down all agents
+4. Archive the feature to `.hive/archive/`
 
-If a work item appears stuck (no progress for >10 minutes):
-1. Check `.hive/logs/activity.jsonl` for the last heartbeat from the assigned agent.
-2. The lead's health-check cron (every 3 minutes) automatically pings stale agents
-   and re-spawns dead ones. You can also ask the lead directly: "What's the status of WI-NNNN?"
-3. If an agent is truly stuck, the lead will re-assign the work item to another developer.
+## Reviewer Specializations
 
-### Cancelling a Feature
+Hive can spawn specialist reviewers based on what your code touches:
 
-Ask the lead: "Cancel the current feature." It will:
-1. Set all open/in-progress work items to `cancelled`.
-2. Set the feature status to `cancelled`.
-3. Shut down all agents.
-4. Archive the feature to `.hive/archive/`.
+| Specialization | Triggered By | Focus |
+|---|---|---|
+| **Security** | auth, crypto, input-validation tags, high risk | Authentication, injection attacks, secrets handling |
+| **Architecture** | new-module, refactor tags | SOLID principles, coupling, module boundaries |
+| **API Contract** | api, schema, breaking-change tags | Backward compatibility, REST conventions |
+| **Performance** | performance, database, algorithm tags | Complexity, N+1 queries, memory patterns |
+| **Compliance** | compliance, gdpr, pci, a11y tags | Licensing, accessibility, data protection |
 
-### Handling Merge Conflicts
-
-If a developer reports a merge conflict:
-1. The lead routes the conflict back to the developer with resolution guidance.
-2. The developer rebases onto the latest base branch and resolves conflicts.
-3. After resolving, the developer re-submits for review.
-4. If conflicts persist after 30 minutes, the lead escalates to you.
+Specialists are spawned automatically based on work item tags. For high-risk items, specialists are always included regardless of count.
 
 ## Hooks
 
-Hive uses Claude Code hooks (configured in `plugins/hive/hooks/hooks.json`) to:
+Hive uses Claude Code hooks to automate logging and validation. You don't need to configure these — they work automatically:
 
-- **Log communications** between agents to `communications.jsonl` (with `from`, `to`, `summary`)
-- **Log task changes** (create/update) to `task-ledger.jsonl`
-- **Log work item activity** (status changes) to `activity.jsonl` via `log-activity.sh`
-- **Auto-commit** `.hive/` state changes to git after each write
-- **Validate completion** ensuring work items pass review and testing before merge
-- **Validate transitions** ensuring work item status changes follow the state machine (`validate-transition.sh`)
+| Hook | What It Does |
+|------|-------------|
+| **log-communication** | Records all messages between agents |
+| **log-activity** | Records work item state changes |
+| **log-task-change** | Records task creation and updates |
+| **validate-transition** | Ensures work item status changes follow the state machine |
+| **validate-completion** | Ensures work items pass review AND testing before merge (on task completion) |
+| **auto-commit** | Auto-commits `.hive/` state changes to git |
 
-All logging is hook-driven and deterministic -- agents do not manually write to log files.
-All timestamps are generated by hook scripts using system time -- agents never write timestamps.
+All timestamps are generated by hook scripts (never by agents), ensuring consistency.
 
-### Hook Debugging Tips
+## Work Item Lifecycle
 
-If hooks aren't firing as expected:
+Every work item follows this path:
 
-1. **Check `plugins/hive/hooks/hooks.json`** — Verify hook matchers
-   are correct (`SendMessage`, `TaskCreate|TaskUpdate`, `Write|Edit`).
-2. **Test scripts manually** — Run a script with sample JSON piped to stdin:
-   ```bash
-   echo '{"tool_input":{"file_path":".hive/test.json"}}' | bash plugins/hive/scripts/auto-commit.sh
-   ```
-3. **Check script permissions** — Scripts must be executable: `chmod +x plugins/hive/scripts/*.sh`
-4. **Review stderr** — Hook scripts write errors to stderr. Check Claude Code's
-   output for hook failure messages.
-5. **Node.js required** — All hook scripts use `node -e` for JSON parsing. Ensure
-   Node.js v16+ is on `$PATH`.
-6. **Path issues on Windows** — Scripts use `${CLAUDE_PROJECT_DIR:-.}`. If this
-   variable isn't set, scripts default to the current directory.
+```
+OPEN → ASSIGNED → IN_PROGRESS → REVIEW → APPROVED → TESTING → READY_TO_MERGE → MERGED
+```
+
+If issues are found:
+- Reviewer returns `CHANGES_REQUESTED` → back to `IN_PROGRESS`
+- Tester returns `TESTS_FAILED` → back to `IN_PROGRESS`
+- Agent is stuck → `BLOCKED` → `IN_PROGRESS` when resolved
+
+No shortcuts — every work item must pass both review AND testing before it can be merged.
 
 ## Development
 
@@ -164,7 +286,7 @@ If hooks aren't firing as expected:
 - Node.js 16+
 - npm
 - Git
-- Bash (for integration tests; Git Bash on Windows)
+- Bash (Git Bash on Windows)
 
 ### Setup
 
@@ -176,51 +298,52 @@ npm install
 ### Running Tests
 
 ```bash
-npm test                  # Run all tests
-npm run test:coverage     # Run with coverage report (90% threshold enforced)
-npm run test:unit         # Unit tests only (src/ module logic)
+npm test                  # Run all tests (~375 tests)
+npm run test:coverage     # With coverage report (90% threshold)
+npm run test:unit         # Unit tests only
 npm run test:integration  # Integration tests (real script execution)
-npm run test:schema       # Schema validation tests (JSON schemas + config files)
-npm run test:agents       # Agent prompt validation (frontmatter, structure, consistency)
-npm run typecheck         # TypeScript type checking (zero errors required)
-npm run ci                # All checks: typecheck + tests + coverage (use in CI pipelines)
+npm run test:schema       # Schema validation tests
+npm run test:agents       # Agent prompt validation
+npm run typecheck         # TypeScript type checking
+npm run ci                # Full pipeline: typecheck + tests + coverage
 ```
 
 ### Test Architecture
 
-| Category | Dir | Tests | What it validates |
-|----------|-----|-------|-------------------|
-| **Unit** | `tests/unit/` | ~170 | Pure function logic in `src/*.ts` modules |
-| **Integration** | `tests/integration/` | ~55 | Real bash script execution with temp dirs |
-| **Schema** | `tests/schema/` | ~75 | JSON schemas, config file validation, version consistency |
-| **Agents** | `tests/agents/` | ~75 | YAML frontmatter, markdown structure, cross-agent consistency |
-
-### Source Modules
-
-The `src/` directory contains TypeScript modules that mirror the inline JavaScript
-in `plugins/hive/scripts/*.sh`. These enable unit testing of hook logic without
-executing bash. Mirror tests in `tests/integration/module-script-mirror.test.ts`
-verify the modules stay in sync with the actual scripts.
-
-| Module | Purpose |
-|--------|---------|
-| `state-machine.ts` | Work item status transitions and valid-transition checks |
-| `bootstrap.ts` | `.hive/` directory scaffolding |
-| `feature-factory.ts` | Feature and work item creation with sequence management |
-| `validate-transition.ts` | Validates status changes against the state machine |
-| `validate-completion.ts` | Ensures review + testing before merge |
-| `log-activity.ts` | Work item status change logging |
-| `log-communication.ts` | Inter-agent message logging |
-| `log-task-change.ts` | Task creation/update logging |
-| `auto-commit.ts` | Auto-commits `.hive/` state changes |
+| Category | Tests | What It Validates |
+|----------|-------|-------------------|
+| **Unit** | ~170 | Pure function logic in `src/*.ts` modules |
+| **Integration** | ~55 | Real bash script execution with temp dirs |
+| **Schema** | ~75 | JSON schemas, config files, version consistency |
+| **Agents** | ~75 | YAML frontmatter, markdown structure, cross-agent consistency |
 
 ### Commit Conventions
 
 ```
-feat:     New features (test infrastructure, schemas)
-fix:      Bug fixes (audit issues)
+feat:     New features
+fix:      Bug fixes
 test:     Adding/updating tests
-refactor: Code restructuring (JS extraction)
+refactor: Code restructuring
 docs:     Documentation updates
-chore:    Maintenance (gitignore, config, metrics)
+chore:    Maintenance (config, tooling)
 ```
+
+## FAQ
+
+**Q: Can I use Hive with any project?**
+A: Yes. Hive works with any codebase that uses git. It adapts to your project's language, framework, and conventions.
+
+**Q: What if an agent gets stuck?**
+A: The monitor agent runs health checks every 5 minutes and alerts the lead. The lead will re-assign stuck work items or spawn fresh agents.
+
+**Q: Can I talk to the agents directly?**
+A: No. All communication goes through the lead agent. You tell the lead what you want, and it coordinates the team.
+
+**Q: What model do agents use?**
+A: All agents use Opus (the most capable model) except the monitor, which uses Haiku for efficiency.
+
+**Q: Does Hive push to my main branch?**
+A: Never. Agents only work on feature branches. You merge to your base branch (usually `develop`) at your discretion.
+
+**Q: How do I see what agents are doing?**
+A: Check `.hive/logs/activity.jsonl` for work item changes, `.hive/logs/communications.jsonl` for agent messages, or just ask the lead: "What's the status?"

@@ -50,6 +50,7 @@ export interface FeatureData {
   updated_at: string;
   work_items: string[];
   agents: string[];
+  next_wi_id: number;
 }
 
 export interface WorkItemData {
@@ -130,11 +131,12 @@ export function createFeature(
     name: config.name,
     status: 'IN_PROGRESS',
     plan: config.plan,
-    branch: config.branch ?? `feature/${id}`,
+    branch: config.branch ?? id,
     created_at: now,
     updated_at: now,
     work_items: [],
     agents: config.agents ?? [],
+    next_wi_id: 1,
   };
 
   writeJson(fs, filePath, feature);
@@ -151,23 +153,47 @@ export function createFeature(
 // createWorkItem
 // ---------------------------------------------------------------------------
 
+/**
+ * Creates a work item with a feature-scoped ID.
+ * WI IDs restart at 1 per feature. The globally unique ID is
+ * `{feature-id}_wi-{wid}` (e.g., `feature-1_wi-1`).
+ * The WI counter is stored as `next_wi_id` in the feature JSON file.
+ */
 export function createWorkItem(
   config: WorkItemConfig,
   hiveDir: string,
   fs: FsOps,
 ): WorkItemData {
+  // Validate feature name format
+  if (!/^feature-\d+$/.test(config.feature)) {
+    throw new Error(`Invalid feature name: "${config.feature}" — must match /^feature-\\d+$/`);
+  }
+
   const wiDir = `${hiveDir}/work-items`;
-  const seqPath = `${wiDir}/_sequence.json`;
   const indexPath = `${wiDir}/_index.json`;
 
-  const num = allocateId(fs, seqPath);
-  const id = `wi-${num}`;
+  // Read the feature file to get the per-feature WI counter
+  const featurePath = `${hiveDir}/features/${config.feature}.json`;
+  const featureData = readJson<FeatureData>(fs, featurePath);
+  const wiNum = featureData.next_wi_id;
+
+  // Validate next_wi_id is a positive integer
+  if (!Number.isInteger(wiNum) || wiNum < 1) {
+    throw new Error(`Invalid next_wi_id in feature file: ${wiNum} — must be a positive integer`);
+  }
+
+  // Build feature-scoped ID: feature-{fid}_wi-{wid}
+  const id = `${config.feature}_wi-${wiNum}`;
   const filePath = `${wiDir}/${id}.json`;
 
   // Duplicate check
   if (fs.existsSync(filePath)) {
     throw new Error(`Work item file already exists: ${filePath}`);
   }
+
+  // Increment the feature's WI counter
+  featureData.next_wi_id = wiNum + 1;
+  writeJson(fs, featurePath, featureData);
 
   const now = config.timestamp ?? new Date().toISOString();
   const wi: WorkItemData = {

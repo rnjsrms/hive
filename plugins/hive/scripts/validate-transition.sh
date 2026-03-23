@@ -14,7 +14,7 @@ try {
   const normalized = filePath.replace(/\\\\/g, '/');
 
   // Only process work-item files
-  const match = normalized.match(/\.hive\/work-items\/(wi-\d+)\.json$/);
+  const match = normalized.match(/\.hive\/work-items\/(?:feature-\w+_)?(wi-\d+)\.json$/);
   if (!match) process.exit(0);
 
   // Read the new file content from disk
@@ -32,7 +32,7 @@ try {
   const relPath = path.relative(projectDir, filePath).replace(/\\\\/g, '/');
   let oldStatus;
   try {
-    const old = execSync('git show \"HEAD:' + relPath + '\"', { cwd: projectDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    const old = require('child_process').execFileSync('git', ['show', 'HEAD:' + relPath], { cwd: projectDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
     oldStatus = JSON.parse(old).status;
   } catch (e) {
     // File is new (not in git yet) — no previous status to validate against

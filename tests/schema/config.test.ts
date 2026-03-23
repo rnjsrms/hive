@@ -255,7 +255,7 @@ describe('version consistency across all config files', () => {
 describe('.hive/config.json schema validation', () => {
   it('validates a correct config with base_branch', () => {
     const validate = ajv.compile(loadSchema('config.schema.json'));
-    expect(validate({ name: 'hive', version: '1.2.0', base_branch: 'master' })).toBe(true);
+    expect(validate({ name: 'hive', version: '1.2.0', base_branch: 'develop' })).toBe(true);
   });
 
   it('validates config without optional base_branch', () => {

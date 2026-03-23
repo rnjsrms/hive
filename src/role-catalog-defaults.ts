@@ -40,7 +40,7 @@ export const DEFAULT_SPECIALIZATIONS: Specialization[] = [
     triggers: ['tag:api', 'tag:schema', 'tag:breaking-change', 'tag:graphql'],
     brief:
       'Focus exclusively on API contracts: backward compatibility, versioning adherence, request/response schema changes, breaking change detection, REST conventions, and contract adherence for inter-service communication.',
-    model: 'sonnet',
+    model: 'opus',
   },
   {
     name: 'performance',
@@ -48,7 +48,7 @@ export const DEFAULT_SPECIALIZATIONS: Specialization[] = [
     triggers: ['tag:performance', 'tag:database', 'tag:algorithm', 'tag:concurrency'],
     brief:
       'Focus exclusively on performance: algorithmic complexity (time/space), memory allocation patterns, concurrency correctness, I/O bottlenecks, N+1 query patterns, cache efficiency, and hot-path optimization.',
-    model: 'sonnet',
+    model: 'opus',
   },
   {
     name: 'compliance',
@@ -56,7 +56,7 @@ export const DEFAULT_SPECIALIZATIONS: Specialization[] = [
     triggers: ['tag:compliance', 'tag:gdpr', 'tag:pci', 'tag:hipaa', 'tag:a11y', 'tag:licensing'],
     brief:
       'Focus exclusively on compliance: licensing compatibility (GPL vs MIT vs proprietary), accessibility standards (WCAG 2.1), data protection regulations (GDPR, PCI-DSS, HIPAA), and legal constraints on code usage.',
-    model: 'sonnet',
+    model: 'opus',
   },
 ];
 

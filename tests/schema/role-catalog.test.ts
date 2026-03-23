@@ -133,21 +133,21 @@ describe('Default specializations', () => {
     const api = DEFAULT_SPECIALIZATIONS.find(s => s.name === 'api-contract');
     expect(api).toBeDefined();
     expect(api!.base_role).toBe('reviewer');
-    expect(api!.model).toBe('sonnet');
+    expect(api!.model).toBe('opus');
   });
 
   it('includes performance specialization', () => {
     const perf = DEFAULT_SPECIALIZATIONS.find(s => s.name === 'performance');
     expect(perf).toBeDefined();
     expect(perf!.base_role).toBe('reviewer');
-    expect(perf!.model).toBe('sonnet');
+    expect(perf!.model).toBe('opus');
   });
 
   it('includes compliance specialization', () => {
     const comp = DEFAULT_SPECIALIZATIONS.find(s => s.name === 'compliance');
     expect(comp).toBeDefined();
     expect(comp!.base_role).toBe('reviewer');
-    expect(comp!.model).toBe('sonnet');
+    expect(comp!.model).toBe('opus');
   });
 
   it('all specializations have non-empty briefs', () => {

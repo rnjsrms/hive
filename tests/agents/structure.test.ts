@@ -120,7 +120,7 @@ describe('hive.md invariants (Phase 8 safety contract)', () => {
 
   it('invariant 9: branch naming convention enforced', () => {
     expect(leadContent).toContain('Branches follow naming convention');
-    expect(leadContent).toContain('feature/wi-{id}-{slug}');
+    expect(leadContent).toContain('_wi-{id}');
   });
 
   it('invariant 10: state files are source of truth', () => {

@@ -43,12 +43,12 @@ export function getRequiredDirs(): string[] {
 
 /**
  * Returns a map of required state files and their initial JSON content.
- * @param baseBranch - The base branch name (default: 'master'). Callers should
+ * @param baseBranch - The base branch name (default: 'develop'). Callers should
  *   auto-detect via `git symbolic-ref refs/remotes/origin/HEAD` when possible.
  */
-export function getRequiredFiles(baseBranch: string = 'master'): Record<string, object> {
+export function getRequiredFiles(baseBranch: string = 'develop'): Record<string, object> {
   return {
-    'config.json': { name: 'hive', version: '2.1.1', base_branch: baseBranch },
+    'config.json': { name: 'hive', version: '2.2.0', base_branch: baseBranch },
     'work-items/_index.json': { items: [] },
     'work-items/_sequence.json': { next_id: 1 },
     'features/_index.json': { items: [] },
@@ -171,7 +171,7 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
         const wiDir = `${hiveDir}/work-items`;
         const existingWiIds = fs.existsSync(wiDir)
           ? fs.readdirSync(wiDir)
-              .filter(f => f.startsWith('wi-') && f.endsWith('.json'))
+              .filter(f => f.endsWith('.json') && !f.startsWith('_'))
               .map(f => f.replace('.json', ''))
           : [];
         const refResult = validateWorkItemRefs(feature, existingWiIds);
@@ -187,7 +187,7 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
   // Check for duplicate work item IDs
   const wiDir = `${hiveDir}/work-items`;
   if (fs.existsSync(wiDir)) {
-    const wiFiles = fs.readdirSync(wiDir).filter(f => f.startsWith('wi-') && f.endsWith('.json'));
+    const wiFiles = fs.readdirSync(wiDir).filter(f => f.endsWith('.json') && !f.startsWith('_'));
     const seenIds = new Set<string>();
     for (const file of wiFiles) {
       const path = `${wiDir}/${file}`;
