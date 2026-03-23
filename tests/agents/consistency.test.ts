@@ -51,10 +51,10 @@ describe('Agent cross-consistency', () => {
     }
   });
 
-  it('developer agent uses feature/wi-{id}-{slug} branch naming (not old feature/hive/...)', () => {
+  it('developer agent uses _WI-{id} compound branch naming', () => {
     const devContent = readAgent('hive-developer.md');
-    expect(devContent).toContain('feature/wi-{id}-{slug}');
-    expect(devContent).not.toContain('feature/hive/');
+    expect(devContent).toContain('_WI-{id}');
+    expect(devContent).not.toContain('feature/wi-');
   });
 
   it('no agent references origin/develop (should use configurable base branch)', () => {
@@ -67,9 +67,9 @@ describe('Agent cross-consistency', () => {
     }
   });
 
-  it('hive.md (lead) uses feature/wi-{id}-{slug} branch naming convention', () => {
+  it('hive.md (lead) uses _WI-{id} compound branch naming convention', () => {
     const leadContent = readAgent('hive.md');
-    expect(leadContent).toContain('feature/wi-{id}-{slug}');
+    expect(leadContent).toContain('_WI-{id}');
   });
 
   it('no agent references WI-NNNN.json file paths (should be wi-{id}.json)', () => {
@@ -127,14 +127,14 @@ describe('Agent cross-consistency', () => {
     ).toMatch(bannerPattern);
   });
 
-  it('developer references feature branch, reviewer references base_branch from .hive/config.json', () => {
+  it('developer references feature branch, reviewer references feature branch for diff', () => {
     const dev = readAgent('hive-developer.md');
     const reviewer = readAgent('hive-reviewer.md');
     // Developer rebases on feature branch
-    expect(dev).toContain('feature/feature-{id}');
+    expect(dev).toContain('feature/{ticket-id}');
     expect(dev).toContain('feature branch');
-    // Reviewer still references base_branch from config for diff context
-    expect(reviewer).toContain('base_branch');
-    expect(reviewer).toContain('.hive/config.json');
+    // Reviewer diffs against feature branch
+    expect(reviewer).toContain('feature/{ticket-id}');
+    expect(reviewer).toContain('_WI-{id}');
   });
 });

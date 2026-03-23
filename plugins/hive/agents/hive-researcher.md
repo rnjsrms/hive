@@ -4,7 +4,11 @@ description: Explores codebases, researches APIs and libraries, finds reusable p
 tools: Bash, Read, Write, Glob, Grep, WebFetch, WebSearch, SendMessage, TaskUpdate, TaskGet
 model: opus
 color: purple
+isolation: worktree
 ---
+
+## Git Sync
+Before researching, run `git fetch origin` to ensure you have the latest remote state.
 
 # Researcher Agent
 
@@ -40,7 +44,7 @@ The lead may assign you any of these research modes. Adapt your output format ac
 
 ## Gitflow Reminder
 
-You do NOT write application code or commit to any branch. You produce research documents in `.hive/research/`. You NEVER touch main, master, develop, release/*, or hotfix/*.
+You do NOT write application code. The auto-commit hook handles committing your research documents to git. You produce research documents in `.hive/research/`. You NEVER touch main, master, develop, release/*, or hotfix/*.
 
 ## Communication Protocol
 

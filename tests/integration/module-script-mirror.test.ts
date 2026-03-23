@@ -320,14 +320,13 @@ describeIf('module-script mirror: bootstrap required files', () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'hive-bootstrap-'));
     const hiveDir = path.join(tmpDir, '.hive');
     fs.mkdirSync(path.join(hiveDir, 'work-items'), { recursive: true });
-    fs.mkdirSync(path.join(hiveDir, 'sprints'), { recursive: true });
+    fs.mkdirSync(path.join(hiveDir, 'features'), { recursive: true });
     fs.mkdirSync(path.join(hiveDir, 'agents'), { recursive: true });
     fs.writeFileSync(path.join(hiveDir, 'work-items', '_index.json'), '{"items":[]}');
     fs.writeFileSync(path.join(hiveDir, 'work-items', '_sequence.json'), '{"next_id":1}');
-    fs.writeFileSync(path.join(hiveDir, 'sprints', '_index.json'), '{"items":[]}');
-    fs.writeFileSync(path.join(hiveDir, 'sprints', '_sequence.json'), '{"next_id":1}');
+    fs.writeFileSync(path.join(hiveDir, 'features', '_index.json'), '{"items":[]}');
     fs.writeFileSync(path.join(hiveDir, 'agents', '_index.json'), '{"agents":[]}');
-    fs.writeFileSync(path.join(hiveDir, 'config.json'), '{"name":"hive","version":"2.1.1","base_branch":"master"}');
+    fs.writeFileSync(path.join(hiveDir, 'config.json'), '{"name":"hive","version":"2.2.0","base_branch":"master"}');
     // Intentionally omit role-catalog.json
     try {
       // bootstrap.sh uses || true so it always exits 0; warnings go to stderr

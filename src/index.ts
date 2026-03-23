@@ -19,10 +19,7 @@ export { isValidTransition, VALID_TRANSITIONS, type WorkItemStatus } from './sta
 export {
   createFeature,
   createWorkItem,
-  getNextId,
-  incrementSequence,
   type FsOps as FeatureFactoryFsOps,
-  type SequenceData,
   type FeatureConfig,
   type FeatureData,
   type WorkItemConfig,

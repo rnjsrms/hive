@@ -17,7 +17,7 @@ export function extractWorkItemId(inputJson: string): string | null {
     const metadata = taskInput.metadata || {};
     let wiId = metadata.work_item_id || taskInput.work_item_id || taskInput.id || '';
     if (!wiId) {
-      const match = subject.match(/WI-\d+/i);
+      const match = subject.match(/[A-Z][A-Z0-9]+-\d+_WI-\d+/) || subject.match(/(?:feature-\w+_)?WI-\d+/i);
       if (match) wiId = match[0];
     }
     return wiId || null;
@@ -36,8 +36,12 @@ export function validateCompletion(
 
   let wiFile = `${wiDir}/${wiId}.json`;
   if (!fs.existsSync(wiFile)) {
+    const wiIdLower = wiId!.toLowerCase();
     const files = fs.readdirSync(wiDir).filter(
-      (f: string) => f === wiId!.toLowerCase() + '.json'
+      (f: string) => {
+        const fl = f.toLowerCase();
+        return fl === wiIdLower + '.json' || fl.endsWith('_' + wiIdLower + '.json');
+      }
     );
     if (files.length > 0) wiFile = `${wiDir}/${files[0]}`;
     else return { valid: true, errors: [] };

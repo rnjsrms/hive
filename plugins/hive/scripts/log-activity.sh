@@ -17,7 +17,7 @@ try {
   const filePath = (data.tool_input || {}).file_path || '';
   // Only process work-item files (handle both / and \ separators)
   const normalized = filePath.replace(/\\\\/g, '/');
-  if (!normalized.includes('.hive/work-items/wi-')) process.exit(0);
+  if (!normalized.match(/\.hive\/work-items\/[A-Z][A-Z0-9]+-\d+_WI-\d+\.json$/) && !normalized.match(/\.hive\/work-items\/wi-\d+\.json$/)) process.exit(0);
   // Read the actual file from disk
   const content = fs.readFileSync(filePath, 'utf8');
   const wi = JSON.parse(content);

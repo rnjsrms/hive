@@ -17,13 +17,13 @@ import {
 
 function makeConfig(overrides: Partial<FeaturePrConfig> = {}): FeaturePrConfig {
   return {
-    featureBranch: 'feature/feature-1',
-    baseBranch: 'master',
-    featureId: 'feature-1',
+    featureBranch: 'feature/TEST-1',
+    baseBranch: 'develop',
+    featureId: 'TEST-1',
     featureName: 'Auth Rewrite',
     workItems: [
-      { id: 'wi-1', title: 'Add login endpoint', status: 'MERGED' },
-      { id: 'wi-2', title: 'Add logout endpoint', status: 'MERGED' },
+      { id: 'TEST-1_WI-1', title: 'Add login endpoint', status: 'MERGED' },
+      { id: 'TEST-1_WI-2', title: 'Add logout endpoint', status: 'MERGED' },
     ],
     ...overrides,
   };
@@ -36,7 +36,7 @@ function makeConfig(overrides: Partial<FeaturePrConfig> = {}): FeaturePrConfig {
 describe('buildPrTitle', () => {
   it('includes feature name and id', () => {
     const title = buildPrTitle(makeConfig());
-    expect(title).toBe('[hive] Auth Rewrite (feature-1)');
+    expect(title).toBe('[hive] Auth Rewrite (TEST-1)');
   });
 
   it('handles names with special characters', () => {
@@ -57,12 +57,12 @@ describe('buildPrBody', () => {
 
   it('includes feature id', () => {
     const body = buildPrBody(makeConfig());
-    expect(body).toContain('`feature-1`');
+    expect(body).toContain('`TEST-1`');
   });
 
   it('includes branch arrow', () => {
     const body = buildPrBody(makeConfig());
-    expect(body).toContain('`feature/feature-1` → `master`');
+    expect(body).toContain('`feature/TEST-1` → `develop`');
   });
 
   it('includes work items table header', () => {
@@ -73,8 +73,8 @@ describe('buildPrBody', () => {
 
   it('lists all work items', () => {
     const body = buildPrBody(makeConfig());
-    expect(body).toContain('| wi-1 | Add login endpoint | MERGED |');
-    expect(body).toContain('| wi-2 | Add logout endpoint | MERGED |');
+    expect(body).toContain('| TEST-1_WI-1 | Add login endpoint | MERGED |');
+    expect(body).toContain('| TEST-1_WI-2 | Add logout endpoint | MERGED |');
   });
 
   it('includes footer', () => {
@@ -98,13 +98,13 @@ describe('buildPrCreateCommand', () => {
   it('generates valid gh pr create command', () => {
     const result = buildPrCreateCommand(makeConfig());
     expect(result.command).toContain('gh pr create');
-    expect(result.command).toContain("--base 'master'");
-    expect(result.command).toContain("--head 'feature/feature-1'");
+    expect(result.command).toContain("--base 'develop'");
+    expect(result.command).toContain("--head 'feature/TEST-1'");
   });
 
   it('returns title and body separately', () => {
     const result = buildPrCreateCommand(makeConfig());
-    expect(result.title).toBe('[hive] Auth Rewrite (feature-1)');
+    expect(result.title).toBe('[hive] Auth Rewrite (TEST-1)');
     expect(result.body).toContain('## Feature: Auth Rewrite');
   });
 
@@ -116,7 +116,7 @@ describe('buildPrCreateCommand', () => {
   it('escapes single quotes in body', () => {
     const result = buildPrCreateCommand(
       makeConfig({
-        workItems: [{ id: 'wi-1', title: "Fix it's bug", status: 'MERGED' }],
+        workItems: [{ id: 'TEST-1_WI-1', title: "Fix it's bug", status: 'MERGED' }],
       }),
     );
     expect(result.command).toContain("it'\\''s");
@@ -238,13 +238,13 @@ describe('validateFeaturePrConfig', () => {
     const errors = validateFeaturePrConfig(
       makeConfig({
         workItems: [
-          { id: 'wi-1', title: 'Done', status: 'MERGED' },
-          { id: 'wi-2', title: 'Not done', status: 'IN_PROGRESS' },
+          { id: 'TEST-1_WI-1', title: 'Done', status: 'MERGED' },
+          { id: 'TEST-1_WI-2', title: 'Not done', status: 'IN_PROGRESS' },
         ],
       }),
     );
     expect(errors.length).toBe(1);
-    expect(errors[0]).toContain('wi-2');
+    expect(errors[0]).toContain('TEST-1_WI-2');
     expect(errors[0]).toContain('MERGED');
   });
 
@@ -252,13 +252,13 @@ describe('validateFeaturePrConfig', () => {
     const errors = validateFeaturePrConfig(
       makeConfig({
         workItems: [
-          { id: 'wi-1', title: 'A', status: 'REVIEW' },
-          { id: 'wi-2', title: 'B', status: 'TESTING' },
+          { id: 'TEST-1_WI-1', title: 'A', status: 'REVIEW' },
+          { id: 'TEST-1_WI-2', title: 'B', status: 'TESTING' },
         ],
       }),
     );
-    expect(errors[0]).toContain('wi-1');
-    expect(errors[0]).toContain('wi-2');
+    expect(errors[0]).toContain('TEST-1_WI-1');
+    expect(errors[0]).toContain('TEST-1_WI-2');
   });
 
   it('collects multiple errors at once', () => {

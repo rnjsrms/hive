@@ -86,10 +86,10 @@ describe('hive.md invariants (Phase 8 safety contract)', () => {
     expect(leadContent).toContain('Lead never writes production code');
   });
 
-  it('invariant 2: workers restricted from index/sequence/feature files (ISS-13 updated)', () => {
-    expect(leadContent).toMatch(/Workers never modify index.*sequence.*feature/i);
-    // ISS-13 fix: workers MAY update their own wi-*.json
-    expect(leadContent).toContain('wi-*.json');
+  it('invariant 2: workers restricted from index/feature files (ISS-13 updated)', () => {
+    expect(leadContent).toMatch(/Workers never modify index.*feature/i);
+    // ISS-13 fix: workers MAY update their own WI json files
+    expect(leadContent).toMatch(/\{ticket-id\}_WI-\{id\}\.json/);
   });
 
   it('invariant 3: every state change is logged', () => {
@@ -120,7 +120,7 @@ describe('hive.md invariants (Phase 8 safety contract)', () => {
 
   it('invariant 9: branch naming convention enforced', () => {
     expect(leadContent).toContain('Branches follow naming convention');
-    expect(leadContent).toContain('feature/wi-{id}-{slug}');
+    expect(leadContent).toContain('_WI-{id}');
   });
 
   it('invariant 10: state files are source of truth', () => {

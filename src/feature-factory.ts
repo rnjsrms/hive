@@ -15,11 +15,8 @@ export interface FsOps {
   existsSync(path: string): boolean;
 }
 
-export interface SequenceData {
-  next_id: number;
-}
-
 export interface FeatureConfig {
+  ticketId: string;
   name: string;
   plan: string;
   agents?: string[];
@@ -50,6 +47,7 @@ export interface FeatureData {
   updated_at: string;
   work_items: string[];
   agents: string[];
+  next_wi_id: number;
 }
 
 export interface WorkItemData {
@@ -72,18 +70,6 @@ export interface WorkItemData {
 }
 
 // ---------------------------------------------------------------------------
-// Sequence helpers
-// ---------------------------------------------------------------------------
-
-export function getNextId(sequenceFile: SequenceData): number {
-  return sequenceFile.next_id;
-}
-
-export function incrementSequence(sequenceFile: SequenceData): SequenceData {
-  return { next_id: sequenceFile.next_id + 1 };
-}
-
-// ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------
 
@@ -95,28 +81,32 @@ function writeJson(fs: FsOps, path: string, data: unknown): void {
   fs.writeFileSync(path, JSON.stringify(data, null, 2) + '\n');
 }
 
-function allocateId(fs: FsOps, seqPath: string): number {
-  const seq = readJson<SequenceData>(fs, seqPath);
-  const id = getNextId(seq);
-  writeJson(fs, seqPath, incrementSequence(seq));
-  return id;
-}
+/** Jira-style ticket ID pattern: uppercase project key + hyphen + number */
+const TICKET_ID_PATTERN = /^[A-Z][A-Z0-9]+-\d+$/;
 
 // ---------------------------------------------------------------------------
 // createFeature
 // ---------------------------------------------------------------------------
 
+/**
+ * Creates a feature using a Jira-style ticket ID (e.g., 'ABC-1234').
+ * Feature IDs are lead-provided, not auto-incremented.
+ * Branch defaults to `feature/{ticketId}` (git-flow convention).
+ */
 export function createFeature(
   config: FeatureConfig,
   hiveDir: string,
   fs: FsOps,
 ): FeatureData {
+  // Validate ticket ID format
+  if (!TICKET_ID_PATTERN.test(config.ticketId)) {
+    throw new Error(`Invalid ticket ID: "${config.ticketId}" — must match Jira format (e.g., ABC-1234)`);
+  }
+
   const featuresDir = `${hiveDir}/features`;
-  const seqPath = `${featuresDir}/_sequence.json`;
   const indexPath = `${featuresDir}/_index.json`;
 
-  const num = allocateId(fs, seqPath);
-  const id = `feature-${num}`;
+  const id = config.ticketId;
   const filePath = `${featuresDir}/${id}.json`;
 
   // Duplicate check
@@ -135,6 +125,7 @@ export function createFeature(
     updated_at: now,
     work_items: [],
     agents: config.agents ?? [],
+    next_wi_id: 1,
   };
 
   writeJson(fs, filePath, feature);
@@ -151,23 +142,52 @@ export function createFeature(
 // createWorkItem
 // ---------------------------------------------------------------------------
 
+/**
+ * Creates a work item with a feature-scoped ID.
+ * WI IDs restart at 1 per feature. The globally unique ID is
+ * `{ticket-id}_WI-{wid}` (e.g., `ABC-1234_WI-1`).
+ * The WI counter is stored as `next_wi_id` in the feature JSON file.
+ */
 export function createWorkItem(
   config: WorkItemConfig,
   hiveDir: string,
   fs: FsOps,
 ): WorkItemData {
+  // Validate feature name format (Jira-style ticket ID)
+  if (!TICKET_ID_PATTERN.test(config.feature)) {
+    throw new Error(`Invalid feature name: "${config.feature}" — must match Jira format (e.g., ABC-1234)`);
+  }
+
   const wiDir = `${hiveDir}/work-items`;
-  const seqPath = `${wiDir}/_sequence.json`;
   const indexPath = `${wiDir}/_index.json`;
 
-  const num = allocateId(fs, seqPath);
-  const id = `wi-${num}`;
+  // IMPORTANT: This read-modify-write is safe under the single-writer invariant
+  // (only the lead agent calls createWorkItem). If concurrent callers are ever
+  // supported, add file locking or use { flag: 'wx' } on the WI file write.
+
+  // Read the feature file to get the per-feature WI counter
+  const featurePath = `${hiveDir}/features/${config.feature}.json`;
+  const featureData = readJson<FeatureData>(fs, featurePath);
+  const wiNum = featureData.next_wi_id;
+
+  // Validate next_wi_id is a positive integer
+  if (!Number.isInteger(wiNum) || wiNum < 1) {
+    throw new Error(`Invalid next_wi_id in feature file: ${wiNum} — must be a positive integer`);
+  }
+
+  // Build feature-scoped ID: {ticket-id}_WI-{wid}
+  const id = `${config.feature}_WI-${wiNum}`;
   const filePath = `${wiDir}/${id}.json`;
 
   // Duplicate check
   if (fs.existsSync(filePath)) {
     throw new Error(`Work item file already exists: ${filePath}`);
   }
+
+  // Increment the feature's WI counter and register WI in the feature
+  featureData.next_wi_id = wiNum + 1;
+  featureData.work_items.push(id);
+  writeJson(fs, featurePath, featureData);
 
   const now = config.timestamp ?? new Date().toISOString();
   const wi: WorkItemData = {

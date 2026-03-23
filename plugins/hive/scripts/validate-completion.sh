@@ -18,8 +18,9 @@ try {
   let wiId = metadata.work_item_id || taskInput.work_item_id || taskInput.id || '';
 
   // Fallback: try to extract WI ID from subject via regex (case-insensitive)
+  // Supports both "wi-123" and "feature-42_wi-123" formats
   if (!wiId) {
-    const match = subject.match(/WI-\d+/i);
+    const match = subject.match(/[A-Z][A-Z0-9]+-\d+_WI-\d+/) || subject.match(/WI-\d+/i);
     if (match) wiId = match[0];
   }
 
@@ -27,7 +28,12 @@ try {
 
   let wiFile = path.join(wiDir, wiId + '.json');
   if (!fs.existsSync(wiFile)) {
-    const files = fs.readdirSync(wiDir).filter(f => f === wiId.toLowerCase() + '.json');
+    // Try case-insensitive match, supporting both wi-N.json and feature-X_wi-N.json
+    const wiIdLower = wiId.toLowerCase();
+    const files = fs.readdirSync(wiDir).filter(f => {
+      const fl = f.toLowerCase();
+      return fl === wiIdLower + '.json' || fl.endsWith('_' + wiIdLower + '.json');
+    });
     if (files.length > 0) wiFile = path.join(wiDir, files[0]);
     else process.exit(0);
   }

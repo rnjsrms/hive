@@ -11,8 +11,8 @@ if [ -d "$HIVE_DIR" ]; then
 const fs = require('fs');
 const hiveDir = process.argv[1];
 const files = [
-  'work-items/_index.json', 'work-items/_sequence.json',
-  'features/_index.json', 'features/_sequence.json',
+  'work-items/_index.json',
+  'features/_index.json',
   'agents/_index.json',
   'config.json',
   'role-catalog.json'
@@ -28,21 +28,23 @@ if (warnings > 0) process.stderr.write('hive-bootstrap: ' + warnings + ' warning
 else process.stderr.write('hive-bootstrap: state valid\n');
 " "$HIVE_DIR" || true
 else
-  # Auto-detect default branch (fallback to master)
-  BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||')
-  BASE_BRANCH="${BASE_BRANCH:-master}"
+  # Prefer develop (git-flow convention), then auto-detect, then fall back to main
+  if git rev-parse --verify origin/develop &>/dev/null; then
+    BASE_BRANCH="develop"
+  else
+    BASE_BRANCH=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|.*/||')
+    BASE_BRANCH="${BASE_BRANCH:-main}"
+  fi
 
   # Full bootstrap
   mkdir -p "$HIVE_DIR/plans" "$HIVE_DIR/research" "$HIVE_DIR/work-items" \
            "$HIVE_DIR/features" "$HIVE_DIR/agents" "$HIVE_DIR/logs" "$HIVE_DIR/archive"
 
   printf '{\n  "items": []\n}\n' > "$HIVE_DIR/work-items/_index.json"
-  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/work-items/_sequence.json"
   printf '{\n  "items": []\n}\n' > "$HIVE_DIR/features/_index.json"
-  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/features/_sequence.json"
   printf '{\n  "agents": []\n}\n' > "$HIVE_DIR/agents/_index.json"
 
-  printf '{\n  "name": "hive",\n  "version": "2.1.1",\n  "base_branch": "%s"\n}\n' "$BASE_BRANCH" > "$HIVE_DIR/config.json"
+  printf '{\n  "name": "hive",\n  "version": "2.2.0",\n  "base_branch": "%s"\n}\n' "$BASE_BRANCH" > "$HIVE_DIR/config.json"
 
   # Default role catalog with specializations
   cat > "$HIVE_DIR/role-catalog.json" << 'CATALOG'
@@ -67,21 +69,21 @@ else
       "base_role": "reviewer",
       "triggers": ["tag:api", "tag:schema", "tag:breaking-change", "tag:graphql"],
       "brief": "Focus exclusively on API contracts: backward compatibility, versioning adherence, request/response schema changes, breaking change detection, REST conventions, and contract adherence for inter-service communication.",
-      "model": "sonnet"
+      "model": "opus"
     },
     {
       "name": "performance",
       "base_role": "reviewer",
       "triggers": ["tag:performance", "tag:database", "tag:algorithm", "tag:concurrency"],
       "brief": "Focus exclusively on performance: algorithmic complexity (time/space), memory allocation patterns, concurrency correctness, I/O bottlenecks, N+1 query patterns, cache efficiency, and hot-path optimization.",
-      "model": "sonnet"
+      "model": "opus"
     },
     {
       "name": "compliance",
       "base_role": "reviewer",
       "triggers": ["tag:compliance", "tag:gdpr", "tag:pci", "tag:hipaa", "tag:a11y", "tag:licensing"],
       "brief": "Focus exclusively on compliance: licensing compatibility (GPL vs MIT vs proprietary), accessibility standards (WCAG 2.1), data protection regulations (GDPR, PCI-DSS, HIPAA), and legal constraints on code usage.",
-      "model": "sonnet"
+      "model": "opus"
     }
   ]
 }

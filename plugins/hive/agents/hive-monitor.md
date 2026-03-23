@@ -18,6 +18,8 @@ On activation, IMMEDIATELY schedule your monitoring loop:
 CronCreate("*/5 * * * *", "Health check: read .hive/agents/_index.json and last 20 lines of .hive/logs/activity.jsonl. Run TaskList. Check for idle, stuck, stale, or dead agents. Report issues to [hive:lead] via SendMessage.")
 ```
 
+On activation, also run `git fetch origin` to ensure you have the latest remote state.
+
 Then perform your first health check right away — do not wait for the cron.
 
 ## Health Check Protocol

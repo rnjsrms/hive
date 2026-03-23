@@ -22,8 +22,8 @@ export function validateTransition(
     const filePath = (data.tool_input || {}).file_path || '';
     const normalized = filePath.replace(/\\/g, '/');
 
-    // Only validate wi-*.json files
-    if (!normalized.match(/\.hive\/work-items\/wi-\d+\.json$/)) {
+    // Only validate work-item JSON files (v2.2.0 Jira-format + legacy fallback)
+    if (!normalized.match(/\.hive\/work-items\/[A-Z][A-Z0-9]+-\d+_WI-\d+\.json$/) && !normalized.match(/\.hive\/work-items\/(?:feature-\w+_)?wi-\d+\.json$/i)) {
       return { valid: true, message: '' };
     }
 

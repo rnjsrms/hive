@@ -115,6 +115,10 @@ describe('Agent frontmatter', () => {
     expect(tools).toContain('Write');
   });
 
+  it('hive-researcher has isolation: worktree', () => {
+    expect(agents['hive-researcher.md'].isolation).toBe('worktree');
+  });
+
   it('hive-reviewer has skills: simplify', () => {
     expect(agents['hive-reviewer.md'].skills).toBe('simplify');
   });
