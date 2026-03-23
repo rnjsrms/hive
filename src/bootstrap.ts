@@ -43,10 +43,12 @@ export function getRequiredDirs(): string[] {
 
 /**
  * Returns a map of required state files and their initial JSON content.
+ * @param baseBranch - The base branch name (default: 'master'). Callers should
+ *   auto-detect via `git symbolic-ref refs/remotes/origin/HEAD` when possible.
  */
-export function getRequiredFiles(): Record<string, object> {
+export function getRequiredFiles(baseBranch: string = 'master'): Record<string, object> {
   return {
-    'config.json': { name: 'hive', version: '2.1.0', base_branch: 'master' },
+    'config.json': { name: 'hive', version: '2.1.1', base_branch: baseBranch },
     'work-items/_index.json': { items: [] },
     'work-items/_sequence.json': { next_id: 1 },
     'features/_index.json': { items: [] },
