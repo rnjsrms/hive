@@ -15,10 +15,6 @@ export interface FsOps {
   existsSync(path: string): boolean;
 }
 
-export interface SequenceData {
-  next_id: number;
-}
-
 export interface FeatureConfig {
   ticketId: string;
   name: string;
@@ -71,18 +67,6 @@ export interface WorkItemData {
   history: Array<{ action: string; agent: string; ts: string; notes?: string }>;
   created_at: string;
   updated_at: string;
-}
-
-// ---------------------------------------------------------------------------
-// Sequence helpers (used for per-feature WI counters)
-// ---------------------------------------------------------------------------
-
-export function getNextId(sequenceFile: SequenceData): number {
-  return sequenceFile.next_id;
-}
-
-export function incrementSequence(sequenceFile: SequenceData): SequenceData {
-  return { next_id: sequenceFile.next_id + 1 };
 }
 
 // ---------------------------------------------------------------------------
@@ -177,6 +161,10 @@ export function createWorkItem(
   const wiDir = `${hiveDir}/work-items`;
   const indexPath = `${wiDir}/_index.json`;
 
+  // IMPORTANT: This read-modify-write is safe under the single-writer invariant
+  // (only the lead agent calls createWorkItem). If concurrent callers are ever
+  // supported, add file locking or use { flag: 'wx' } on the WI file write.
+
   // Read the feature file to get the per-feature WI counter
   const featurePath = `${hiveDir}/features/${config.feature}.json`;
   const featureData = readJson<FeatureData>(fs, featurePath);
@@ -196,8 +184,9 @@ export function createWorkItem(
     throw new Error(`Work item file already exists: ${filePath}`);
   }
 
-  // Increment the feature's WI counter
+  // Increment the feature's WI counter and register WI in the feature
   featureData.next_wi_id = wiNum + 1;
+  featureData.work_items.push(id);
   writeJson(fs, featurePath, featureData);
 
   const now = config.timestamp ?? new Date().toISOString();
