@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# PostToolUse hook: validates work item status transitions on wi-*.json writes
+# PostToolUse hook: validates work item status transitions on work-item JSON writes
 set -euo pipefail
 
 INPUT=$(cat)
@@ -7,14 +7,14 @@ INPUT=$(cat)
 echo "$INPUT" | node -e "
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 try {
   const data = JSON.parse(fs.readFileSync(0, 'utf8'));
   const filePath = (data.tool_input || {}).file_path || '';
   const normalized = filePath.replace(/\\\\/g, '/');
 
   // Only process work-item files
-  const match = normalized.match(/\.hive\/work-items\/[A-Z][A-Z0-9]+-\d+_WI-\d+\.json$/) || normalized.match(/\.hive\/work-items\/(?:feature-\w+_)?(wi-\d+)\.json$/);
+  const match = normalized.match(/\.hive\/work-items\/[A-Z][A-Z0-9]+-\d+_WI-\d+\.json$/) || normalized.match(/\.hive\/work-items\/wi-\d+\.json$/);
   if (!match) process.exit(0);
 
   // Read the new file content from disk
@@ -30,9 +30,10 @@ try {
   // Get the old status from git (last committed version)
   const projectDir = process.argv[1];
   const relPath = path.relative(projectDir, filePath).replace(/\\\\/g, '/');
+  if (relPath.startsWith('..')) process.exit(0);
   let oldStatus;
   try {
-    const old = require('child_process').execFileSync('git', ['show', 'HEAD:' + relPath], { cwd: projectDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
+    const old = execFileSync('git', ['show', 'HEAD:' + relPath], { cwd: projectDir, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] });
     oldStatus = JSON.parse(old).status;
   } catch (e) {
     // File is new (not in git yet) — no previous status to validate against

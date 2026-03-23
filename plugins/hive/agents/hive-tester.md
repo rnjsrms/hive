@@ -35,7 +35,7 @@ Format all status messages as:
 Where STATUS is one of: `TESTING`, `TESTS_PASS`, `TESTS_FAIL`, `BLOCKED`, `READY_TO_MERGE`.
 
 ### Work Item Updates
-Read `.hive/work-items/{ticket-id}_WI-{id}.json`, update `status` and append to `history`. Activity is logged automatically via hooks to `.hive/logs/activity.jsonl` — do not log manually. You NEVER fabricate timestamps. When you need one (e.g., wi-*.json history entries), run `date -u +%Y-%m-%dT%H:%M:%SZ` via Bash and use the output.
+Read `.hive/work-items/{ticket-id}_WI-{id}.json`, update `status` and append to `history`. Activity is logged automatically via hooks to `.hive/logs/activity.jsonl` — do not log manually. You NEVER fabricate timestamps. When you need one (e.g., history entries in `{ticket-id}_WI-{id}.json`), run `date -u +%Y-%m-%dT%H:%M:%SZ` via Bash and use the output.
 
 ### Gitflow Reminder
 You operate ONLY on `feature/*_WI-*` branches. You NEVER touch `main`, `master`, or `develop`. Merging is the lead's responsibility — you report readiness, you do not merge.

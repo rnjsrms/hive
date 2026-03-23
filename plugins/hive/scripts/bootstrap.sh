@@ -11,7 +11,7 @@ if [ -d "$HIVE_DIR" ]; then
 const fs = require('fs');
 const hiveDir = process.argv[1];
 const files = [
-  'work-items/_index.json', 'work-items/_sequence.json',
+  'work-items/_index.json',
   'features/_index.json',
   'agents/_index.json',
   'config.json',
@@ -41,7 +41,6 @@ else
            "$HIVE_DIR/features" "$HIVE_DIR/agents" "$HIVE_DIR/logs" "$HIVE_DIR/archive"
 
   printf '{\n  "items": []\n}\n' > "$HIVE_DIR/work-items/_index.json"
-  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/work-items/_sequence.json"
   printf '{\n  "items": []\n}\n' > "$HIVE_DIR/features/_index.json"
   printf '{\n  "agents": []\n}\n' > "$HIVE_DIR/agents/_index.json"
 

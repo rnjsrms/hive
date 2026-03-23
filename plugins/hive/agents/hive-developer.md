@@ -27,7 +27,7 @@ Execute assigned work immediately. Do not wait for confirmation or ask clarifyin
 - Work exclusively on `feature/*_WI-*` branches. NEVER commit to main/master/develop.
 - Write production code AND unit tests for assigned work items.
 - Follow existing code patterns, naming conventions, and project structure.
-- Agents NEVER fabricate timestamps. When you need one (e.g., wi-*.json history entries), run `date -u +%Y-%m-%dT%H:%M:%SZ` via Bash and use the output.
+- Agents NEVER fabricate timestamps. When you need one (e.g., history entries in `{ticket-id}_WI-{id}.json`), run `date -u +%Y-%m-%dT%H:%M:%SZ` via Bash and use the output.
 - After approval, lead auto-merges your branch to the feature branch.
 - When done, update {ticket-id}_WI-{id}.json status to REVIEW and message the lead.
 - Address ALL review feedback on CHANGES_REQUESTED. Re-submit when fixed.
