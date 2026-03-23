@@ -1,5 +1,5 @@
 /**
- * Sprint PR — builds gh CLI commands for sprint-end PR creation and review.
+ * Feature PR — builds gh CLI commands for feature-end PR creation and review.
  *
  * Pure functions that generate command strings and structured data.
  * The lead agent executes these commands via Bash; this module never
@@ -10,15 +10,15 @@
 // Types
 // ---------------------------------------------------------------------------
 
-export interface SprintPrConfig {
-  sprintBranch: string;
+export interface FeaturePrConfig {
+  featureBranch: string;
   baseBranch: string;
-  sprintId: string;
-  sprintName: string;
-  workItems: SprintWorkItemSummary[];
+  featureId: string;
+  featureName: string;
+  workItems: FeatureWorkItemSummary[];
 }
 
-export interface SprintWorkItemSummary {
+export interface FeatureWorkItemSummary {
   id: string;
   title: string;
   status: string;
@@ -53,12 +53,12 @@ export interface PrCommentCommand {
 // PR body generation
 // ---------------------------------------------------------------------------
 
-export function buildPrBody(config: SprintPrConfig): string {
+export function buildPrBody(config: FeaturePrConfig): string {
   const lines: string[] = [
-    `## Sprint: ${config.sprintName}`,
+    `## Feature: ${config.featureName}`,
     '',
-    `Sprint ID: \`${config.sprintId}\``,
-    `Branch: \`${config.sprintBranch}\` → \`${config.baseBranch}\``,
+    `Feature ID: \`${config.featureId}\``,
+    `Branch: \`${config.featureBranch}\` → \`${config.baseBranch}\``,
     '',
     '### Work Items',
     '',
@@ -81,15 +81,15 @@ export function buildPrBody(config: SprintPrConfig): string {
 // PR title generation
 // ---------------------------------------------------------------------------
 
-export function buildPrTitle(config: SprintPrConfig): string {
-  return `[hive] ${config.sprintName} (${config.sprintId})`;
+export function buildPrTitle(config: FeaturePrConfig): string {
+  return `[hive] ${config.featureName} (${config.featureId})`;
 }
 
 // ---------------------------------------------------------------------------
 // gh pr create command
 // ---------------------------------------------------------------------------
 
-export function buildPrCreateCommand(config: SprintPrConfig): PrCreateCommand {
+export function buildPrCreateCommand(config: FeaturePrConfig): PrCreateCommand {
   const title = buildPrTitle(config);
   const body = buildPrBody(config);
 
@@ -100,7 +100,7 @@ export function buildPrCreateCommand(config: SprintPrConfig): PrCreateCommand {
   const command = [
     'gh pr create',
     `--base '${config.baseBranch}'`,
-    `--head '${config.sprintBranch}'`,
+    `--head '${config.featureBranch}'`,
     `--title '${escapedTitle}'`,
     `--body '${escapedBody}'`,
   ].join(' ');
@@ -163,20 +163,20 @@ export function buildPrCommentCommand(
 // Validation helpers
 // ---------------------------------------------------------------------------
 
-export function validateSprintPrConfig(config: SprintPrConfig): string[] {
+export function validateFeaturePrConfig(config: FeaturePrConfig): string[] {
   const errors: string[] = [];
 
-  if (!config.sprintBranch) {
-    errors.push('sprintBranch is required');
+  if (!config.featureBranch) {
+    errors.push('featureBranch is required');
   }
   if (!config.baseBranch) {
     errors.push('baseBranch is required');
   }
-  if (!config.sprintId) {
-    errors.push('sprintId is required');
+  if (!config.featureId) {
+    errors.push('featureId is required');
   }
-  if (!config.sprintName) {
-    errors.push('sprintName is required');
+  if (!config.featureName) {
+    errors.push('featureName is required');
   }
   if (!config.workItems || config.workItems.length === 0) {
     errors.push('workItems must contain at least one item');
@@ -186,7 +186,7 @@ export function validateSprintPrConfig(config: SprintPrConfig): string[] {
   const nonMerged = (config.workItems || []).filter(wi => wi.status !== 'MERGED');
   if (nonMerged.length > 0) {
     errors.push(
-      `All work items must be MERGED before creating sprint PR. Non-merged: ${nonMerged.map(wi => wi.id).join(', ')}`,
+      `All work items must be MERGED before creating feature PR. Non-merged: ${nonMerged.map(wi => wi.id).join(', ')}`,
     );
   }
 

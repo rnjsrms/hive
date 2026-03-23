@@ -1,5 +1,5 @@
 /**
- * Sprint Factory — creates sprint and work-item JSON files.
+ * Feature Factory — creates feature and work-item JSON files.
  *
  * Pure functions with injected file-system operations so the module
  * is fully testable without touching disk.
@@ -19,7 +19,7 @@ export interface SequenceData {
   next_id: number;
 }
 
-export interface SprintConfig {
+export interface FeatureConfig {
   name: string;
   plan: string;
   agents?: string[];
@@ -31,7 +31,7 @@ export interface WorkItemConfig {
   title: string;
   type: 'feature' | 'bugfix' | 'refactor' | 'test' | 'docs' | 'research';
   risk: 'low' | 'medium' | 'high';
-  sprint: string;
+  feature: string;
   description: string;
   acceptance_criteria: string[];
   dependencies?: string[];
@@ -40,7 +40,7 @@ export interface WorkItemConfig {
   timestamp?: string;
 }
 
-export interface SprintData {
+export interface FeatureData {
   id: string;
   name: string;
   status: 'PLANNING' | 'IN_PROGRESS' | 'AGENTS_COMPLETE' | 'MERGED' | 'CANCELLED';
@@ -59,7 +59,7 @@ export interface WorkItemData {
   risk: string;
   status: string;
   assignee: string | null;
-  sprint: string;
+  feature: string;
   branch: string | null;
   description: string;
   acceptance_criteria: string[];
@@ -103,48 +103,48 @@ function allocateId(fs: FsOps, seqPath: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// createSprint
+// createFeature
 // ---------------------------------------------------------------------------
 
-export function createSprint(
-  config: SprintConfig,
+export function createFeature(
+  config: FeatureConfig,
   hiveDir: string,
   fs: FsOps,
-): SprintData {
-  const sprintsDir = `${hiveDir}/sprints`;
-  const seqPath = `${sprintsDir}/_sequence.json`;
-  const indexPath = `${sprintsDir}/_index.json`;
+): FeatureData {
+  const featuresDir = `${hiveDir}/features`;
+  const seqPath = `${featuresDir}/_sequence.json`;
+  const indexPath = `${featuresDir}/_index.json`;
 
   const num = allocateId(fs, seqPath);
-  const id = `sprint-${num}`;
-  const filePath = `${sprintsDir}/${id}.json`;
+  const id = `feature-${num}`;
+  const filePath = `${featuresDir}/${id}.json`;
 
   // Duplicate check
   if (fs.existsSync(filePath)) {
-    throw new Error(`Sprint file already exists: ${filePath}`);
+    throw new Error(`Feature file already exists: ${filePath}`);
   }
 
   const now = config.timestamp ?? new Date().toISOString();
-  const sprint: SprintData = {
+  const feature: FeatureData = {
     id,
     name: config.name,
     status: 'IN_PROGRESS',
     plan: config.plan,
-    branch: config.branch ?? `sprint/${id}`,
+    branch: config.branch ?? `feature/${id}`,
     created_at: now,
     updated_at: now,
     work_items: [],
     agents: config.agents ?? [],
   };
 
-  writeJson(fs, filePath, sprint);
+  writeJson(fs, filePath, feature);
 
   // Update index
   const index = readJson<{ items: Array<{ id: string; status: string }> }>(fs, indexPath);
-  index.items.push({ id, status: sprint.status });
+  index.items.push({ id, status: feature.status });
   writeJson(fs, indexPath, index);
 
-  return sprint;
+  return feature;
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +177,7 @@ export function createWorkItem(
     risk: config.risk,
     status: 'OPEN',
     assignee: null,
-    sprint: config.sprint,
+    feature: config.feature,
     branch: null,
     description: config.description,
     acceptance_criteria: config.acceptance_criteria,
