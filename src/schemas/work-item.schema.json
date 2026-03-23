@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
-  "required": ["id", "title", "type", "risk", "status", "sprint", "description", "acceptance_criteria", "dependencies", "history", "created_at", "updated_at"],
+  "required": ["id", "title", "type", "risk", "status", "feature", "description", "acceptance_criteria", "dependencies", "history", "created_at", "updated_at"],
   "properties": {
     "id": { "type": "string", "pattern": "^wi-\\d+$" },
     "title": { "type": "string", "minLength": 1 },
@@ -9,7 +9,7 @@
     "risk": { "type": "string", "enum": ["low", "medium", "high"] },
     "status": { "type": "string", "enum": ["OPEN", "ASSIGNED", "IN_PROGRESS", "REVIEW", "APPROVED", "CHANGES_REQUESTED", "TESTING", "TESTS_FAILED", "READY_TO_MERGE", "BLOCKED", "MERGED", "CANCELLED"] },
     "assignee": { "type": ["string", "null"] },
-    "sprint": { "type": "string", "pattern": "^sprint-\\d+$" },
+    "feature": { "type": "string", "pattern": "^feature-\\d+$" },
     "branch": { "type": ["string", "null"] },
     "description": { "type": "string" },
     "acceptance_criteria": { "type": "array", "items": { "type": "string" } },
