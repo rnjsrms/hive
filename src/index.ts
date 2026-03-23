@@ -17,17 +17,17 @@ export {
 export { buildActivityEntry, type ActivityEntry } from './log-activity.js';
 export { isValidTransition, VALID_TRANSITIONS, type WorkItemStatus } from './state-machine.js';
 export {
-  createSprint,
+  createFeature,
   createWorkItem,
   getNextId,
   incrementSequence,
-  type FsOps as SprintFactoryFsOps,
+  type FsOps as FeatureFactoryFsOps,
   type SequenceData,
-  type SprintConfig,
-  type SprintData,
+  type FeatureConfig,
+  type FeatureData,
   type WorkItemConfig,
   type WorkItemData,
-} from './sprint-factory.js';
+} from './feature-factory.js';
 export {
   getRequiredDirs,
   getRequiredFiles,
@@ -55,13 +55,13 @@ export {
   buildPrCreateCommand,
   buildPrReviewCommand,
   buildPrCommentCommand,
-  validateSprintPrConfig,
+  validateFeaturePrConfig,
   checkPrerequisites,
-  type SprintPrConfig,
-  type SprintWorkItemSummary,
+  type FeaturePrConfig,
+  type FeatureWorkItemSummary,
   type PrCreateCommand,
   type ReviewComment,
   type PrReviewCommand,
   type PrCommentCommand,
   type PrerequisiteCheck,
-} from './sprint-pr.js';
+} from './feature-pr.js';

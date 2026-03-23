@@ -12,7 +12,7 @@ const fs = require('fs');
 const hiveDir = process.argv[1];
 const files = [
   'work-items/_index.json', 'work-items/_sequence.json',
-  'sprints/_index.json', 'sprints/_sequence.json',
+  'features/_index.json', 'features/_sequence.json',
   'agents/_index.json',
   'config.json',
   'role-catalog.json'
@@ -34,12 +34,12 @@ else
 
   # Full bootstrap
   mkdir -p "$HIVE_DIR/plans" "$HIVE_DIR/research" "$HIVE_DIR/work-items" \
-           "$HIVE_DIR/sprints" "$HIVE_DIR/agents" "$HIVE_DIR/logs" "$HIVE_DIR/archive"
+           "$HIVE_DIR/features" "$HIVE_DIR/agents" "$HIVE_DIR/logs" "$HIVE_DIR/archive"
 
   printf '{\n  "items": []\n}\n' > "$HIVE_DIR/work-items/_index.json"
   printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/work-items/_sequence.json"
-  printf '{\n  "items": []\n}\n' > "$HIVE_DIR/sprints/_index.json"
-  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/sprints/_sequence.json"
+  printf '{\n  "items": []\n}\n' > "$HIVE_DIR/features/_index.json"
+  printf '{\n  "next_id": 1\n}\n' > "$HIVE_DIR/features/_sequence.json"
   printf '{\n  "agents": []\n}\n' > "$HIVE_DIR/agents/_index.json"
 
   printf '{\n  "name": "hive",\n  "version": "2.1.1",\n  "base_branch": "%s"\n}\n' "$BASE_BRANCH" > "$HIVE_DIR/config.json"

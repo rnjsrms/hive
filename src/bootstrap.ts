@@ -38,7 +38,7 @@ export interface ValidationResult {
  * Returns the list of required .hive/ subdirectories.
  */
 export function getRequiredDirs(): string[] {
-  return ['plans', 'research', 'work-items', 'sprints', 'agents', 'logs', 'archive'];
+  return ['plans', 'research', 'work-items', 'features', 'agents', 'logs', 'archive'];
 }
 
 /**
@@ -51,8 +51,8 @@ export function getRequiredFiles(baseBranch: string = 'master'): Record<string, 
     'config.json': { name: 'hive', version: '2.1.1', base_branch: baseBranch },
     'work-items/_index.json': { items: [] },
     'work-items/_sequence.json': { next_id: 1 },
-    'sprints/_index.json': { items: [] },
-    'sprints/_sequence.json': { next_id: 1 },
+    'features/_index.json': { items: [] },
+    'features/_sequence.json': { next_id: 1 },
     'agents/_index.json': { agents: [] },
     'role-catalog.json': DEFAULT_ROLE_CATALOG,
   };
@@ -75,13 +75,13 @@ export function validateStateFile(content: string): StateFileValidation {
 }
 
 /**
- * Checks that all WI IDs in a sprint's work_items array exist in the given list.
+ * Checks that all WI IDs in a feature's work_items array exist in the given list.
  */
 export function validateWorkItemRefs(
-  sprintData: { work_items?: string[] },
+  featureData: { work_items?: string[] },
   existingWiIds: string[],
 ): WorkItemRefValidation {
-  const workItems = sprintData.work_items || [];
+  const workItems = featureData.work_items || [];
   const existingSet = new Set(existingWiIds);
   const danglingRefs = workItems.filter(id => !existingSet.has(id));
   return { valid: danglingRefs.length === 0, danglingRefs };
@@ -159,14 +159,14 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
     }
   }
 
-  // Validate sprint files and cross-references
-  const sprintsDir = `${hiveDir}/sprints`;
-  if (fs.existsSync(sprintsDir)) {
-    const sprintFiles = fs.readdirSync(sprintsDir).filter(f => f.startsWith('sprint-') && f.endsWith('.json'));
-    for (const file of sprintFiles) {
-      const path = `${sprintsDir}/${file}`;
+  // Validate feature files and cross-references
+  const featuresDir = `${hiveDir}/features`;
+  if (fs.existsSync(featuresDir)) {
+    const featureFiles = fs.readdirSync(featuresDir).filter(f => f.startsWith('feature-') && f.endsWith('.json'));
+    for (const file of featureFiles) {
+      const path = `${featuresDir}/${file}`;
       try {
-        const sprint = JSON.parse(fs.readFileSync(path, 'utf8'));
+        const feature = JSON.parse(fs.readFileSync(path, 'utf8'));
         // Collect existing WI IDs for cross-reference check
         const wiDir = `${hiveDir}/work-items`;
         const existingWiIds = fs.existsSync(wiDir)
@@ -174,12 +174,12 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
               .filter(f => f.startsWith('wi-') && f.endsWith('.json'))
               .map(f => f.replace('.json', ''))
           : [];
-        const refResult = validateWorkItemRefs(sprint, existingWiIds);
+        const refResult = validateWorkItemRefs(feature, existingWiIds);
         for (const ref of refResult.danglingRefs) {
-          warnings.push({ file: `sprints/${file}`, message: `References missing work item: ${ref}` });
+          warnings.push({ file: `features/${file}`, message: `References missing work item: ${ref}` });
         }
       } catch {
-        warnings.push({ file: `sprints/${file}`, message: 'Invalid JSON' });
+        warnings.push({ file: `features/${file}`, message: 'Invalid JSON' });
       }
     }
   }

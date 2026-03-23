@@ -127,12 +127,12 @@ describe('Agent cross-consistency', () => {
     ).toMatch(bannerPattern);
   });
 
-  it('developer references sprint branch, reviewer references base_branch from .hive/config.json', () => {
+  it('developer references feature branch, reviewer references base_branch from .hive/config.json', () => {
     const dev = readAgent('hive-developer.md');
     const reviewer = readAgent('hive-reviewer.md');
-    // Developer rebases on sprint branch (not base_branch)
-    expect(dev).toContain('sprint/sprint-{id}');
-    expect(dev).toContain('sprint branch');
+    // Developer rebases on feature branch
+    expect(dev).toContain('feature/feature-{id}');
+    expect(dev).toContain('feature branch');
     // Reviewer still references base_branch from config for diff context
     expect(reviewer).toContain('base_branch');
     expect(reviewer).toContain('.hive/config.json');

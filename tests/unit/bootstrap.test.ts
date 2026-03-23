@@ -55,7 +55,7 @@ describe('getRequiredDirs', () => {
     expect(dirs).toContain('plans');
     expect(dirs).toContain('research');
     expect(dirs).toContain('work-items');
-    expect(dirs).toContain('sprints');
+    expect(dirs).toContain('features');
     expect(dirs).toContain('agents');
     expect(dirs).toContain('logs');
     expect(dirs).toContain('archive');
@@ -90,10 +90,10 @@ describe('getRequiredFiles', () => {
     expect(files['work-items/_sequence.json']).toEqual({ next_id: 1 });
   });
 
-  it('includes sprints index and sequence', () => {
+  it('includes features index and sequence', () => {
     const files = getRequiredFiles();
-    expect(files['sprints/_index.json']).toEqual({ items: [] });
-    expect(files['sprints/_sequence.json']).toEqual({ next_id: 1 });
+    expect(files['features/_index.json']).toEqual({ items: [] });
+    expect(files['features/_sequence.json']).toEqual({ next_id: 1 });
   });
 
   it('includes agents index', () => {
@@ -225,7 +225,7 @@ describe('initializeHive', () => {
     expect(result.directories).toContain('plans');
     expect(result.directories).toContain('research');
     expect(result.directories).toContain('work-items');
-    expect(result.directories).toContain('sprints');
+    expect(result.directories).toContain('features');
     expect(result.directories).toContain('agents');
     expect(result.directories).toContain('logs');
     expect(result.directories).toContain('archive');
@@ -237,8 +237,8 @@ describe('initializeHive', () => {
     expect(JSON.parse(fs.files['/project/.hive/config.json'])).toEqual({ name: 'hive', version: '2.1.1', base_branch: 'master' });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_index.json'])).toEqual({ items: [] });
     expect(JSON.parse(fs.files['/project/.hive/work-items/_sequence.json'])).toEqual({ next_id: 1 });
-    expect(JSON.parse(fs.files['/project/.hive/sprints/_index.json'])).toEqual({ items: [] });
-    expect(JSON.parse(fs.files['/project/.hive/sprints/_sequence.json'])).toEqual({ next_id: 1 });
+    expect(JSON.parse(fs.files['/project/.hive/features/_index.json'])).toEqual({ items: [] });
+    expect(JSON.parse(fs.files['/project/.hive/features/_sequence.json'])).toEqual({ next_id: 1 });
     expect(JSON.parse(fs.files['/project/.hive/agents/_index.json'])).toEqual({ agents: [] });
     const catalog = JSON.parse(fs.files['/project/.hive/role-catalog.json']);
     expect(catalog.specializations).toBeDefined();
@@ -262,7 +262,7 @@ describe('initializeHive', () => {
   it('returns file list including state files, logs, and gitkeeps', () => {
     const result = initializeHive('/project', fs);
     expect(result.files).toContain('work-items/_index.json');
-    expect(result.files).toContain('sprints/_sequence.json');
+    expect(result.files).toContain('features/_sequence.json');
     expect(result.files).toContain('logs/activity.jsonl');
     expect(result.files).toContain('plans/.gitkeep');
   });
@@ -288,13 +288,13 @@ describe('validateState', () => {
     // Set up a valid .hive directory
     fs.dirs.add('/project/.hive');
     fs.dirs.add('/project/.hive/work-items');
-    fs.dirs.add('/project/.hive/sprints');
+    fs.dirs.add('/project/.hive/features');
     fs.dirs.add('/project/.hive/agents');
     fs.files['/project/.hive/config.json'] = '{"name":"hive","version":"2.1.1","base_branch":"master"}';
     fs.files['/project/.hive/work-items/_index.json'] = '{"items":[]}';
     fs.files['/project/.hive/work-items/_sequence.json'] = '{"next_id":1}';
-    fs.files['/project/.hive/sprints/_index.json'] = '{"items":[]}';
-    fs.files['/project/.hive/sprints/_sequence.json'] = '{"next_id":1}';
+    fs.files['/project/.hive/features/_index.json'] = '{"items":[]}';
+    fs.files['/project/.hive/features/_sequence.json'] = '{"next_id":1}';
     fs.files['/project/.hive/agents/_index.json'] = '{"agents":[]}';
     fs.files['/project/.hive/role-catalog.json'] = '{"specializations":[]}';
   });
@@ -323,27 +323,27 @@ describe('validateState', () => {
   });
 
   it('warns on invalid JSON in state files', () => {
-    fs.files['/project/.hive/sprints/_index.json'] = '{bad json';
+    fs.files['/project/.hive/features/_index.json'] = '{bad json';
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
-    const warning = result.warnings.find(w => w.file === 'sprints/_index.json');
+    const warning = result.warnings.find(w => w.file === 'features/_index.json');
     expect(warning).toBeDefined();
     expect(warning!.message).toMatch(/Invalid JSON/);
   });
 
-  it('warns on invalid JSON in sprint files', () => {
-    fs.files['/project/.hive/sprints/sprint-1.json'] = '{not valid}';
+  it('warns on invalid JSON in feature files', () => {
+    fs.files['/project/.hive/features/feature-1.json'] = '{not valid}';
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     expect(result.warnings).toContainEqual({
-      file: 'sprints/sprint-1.json',
+      file: 'features/feature-1.json',
       message: 'Invalid JSON',
     });
   });
 
-  it('warns when sprint references missing work item', () => {
-    fs.files['/project/.hive/sprints/sprint-1.json'] = JSON.stringify({
-      id: 'sprint-1',
+  it('warns when feature references missing work item', () => {
+    fs.files['/project/.hive/features/feature-1.json'] = JSON.stringify({
+      id: 'feature-1',
       work_items: ['wi-1', 'wi-2'],
     });
     fs.files['/project/.hive/work-items/wi-1.json'] = JSON.stringify({ id: 'wi-1' });
@@ -351,14 +351,14 @@ describe('validateState', () => {
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);
     expect(result.warnings).toContainEqual({
-      file: 'sprints/sprint-1.json',
+      file: 'features/feature-1.json',
       message: 'References missing work item: wi-2',
     });
   });
 
-  it('does not warn when all sprint work items exist', () => {
-    fs.files['/project/.hive/sprints/sprint-1.json'] = JSON.stringify({
-      id: 'sprint-1',
+  it('does not warn when all feature work items exist', () => {
+    fs.files['/project/.hive/features/feature-1.json'] = JSON.stringify({
+      id: 'feature-1',
       work_items: ['wi-1'],
     });
     fs.files['/project/.hive/work-items/wi-1.json'] = JSON.stringify({ id: 'wi-1' });
@@ -385,34 +385,34 @@ describe('validateState', () => {
     });
   });
 
-  it('handles sprint with empty work_items array', () => {
-    fs.files['/project/.hive/sprints/sprint-1.json'] = JSON.stringify({
-      id: 'sprint-1',
+  it('handles feature with empty work_items array', () => {
+    fs.files['/project/.hive/features/feature-1.json'] = JSON.stringify({
+      id: 'feature-1',
       work_items: [],
     });
     const result = validateState('/project', fs);
     expect(result.valid).toBe(true);
   });
 
-  it('handles sprint with no work_items field', () => {
-    fs.files['/project/.hive/sprints/sprint-1.json'] = JSON.stringify({
-      id: 'sprint-1',
+  it('handles feature with no work_items field', () => {
+    fs.files['/project/.hive/features/feature-1.json'] = JSON.stringify({
+      id: 'feature-1',
     });
     const result = validateState('/project', fs);
     expect(result.valid).toBe(true);
   });
 
-  it('ignores non-sprint files in sprints directory', () => {
-    fs.files['/project/.hive/sprints/_index.json'] = '{"items":[]}';
-    fs.files['/project/.hive/sprints/_sequence.json'] = '{"next_id":1}';
-    // These should not be parsed as sprint files
+  it('ignores non-feature files in features directory', () => {
+    fs.files['/project/.hive/features/_index.json'] = '{"items":[]}';
+    fs.files['/project/.hive/features/_sequence.json'] = '{"next_id":1}';
+    // These should not be parsed as feature files
     const result = validateState('/project', fs);
     expect(result.valid).toBe(true);
   });
 
   it('accumulates multiple warnings', () => {
     delete fs.files['/project/.hive/work-items/_index.json'];
-    fs.files['/project/.hive/sprints/_sequence.json'] = '{bad}';
+    fs.files['/project/.hive/features/_sequence.json'] = '{bad}';
     fs.files['/project/.hive/work-items/wi-1.json'] = 'invalid';
     const result = validateState('/project', fs);
     expect(result.valid).toBe(false);

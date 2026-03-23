@@ -17,8 +17,8 @@ describe('validateTransition', () => {
     expect(result.message).toBe('');
   });
 
-  it('should return valid for sprint files', () => {
-    const input = makeInput('/project/.hive/sprints/sprint-1.json');
+  it('should return valid for feature files', () => {
+    const input = makeInput('/project/.hive/features/feature-1.json');
     const result = validateTransition(input, '{}', null);
     expect(result.valid).toBe(true);
   });

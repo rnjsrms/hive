@@ -5,22 +5,22 @@ import {
   buildPrCreateCommand,
   buildPrReviewCommand,
   buildPrCommentCommand,
-  validateSprintPrConfig,
+  validateFeaturePrConfig,
   checkPrerequisites,
-  type SprintPrConfig,
+  type FeaturePrConfig,
   type ReviewComment,
-} from '../../src/sprint-pr.js';
+} from '../../src/feature-pr.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeConfig(overrides: Partial<SprintPrConfig> = {}): SprintPrConfig {
+function makeConfig(overrides: Partial<FeaturePrConfig> = {}): FeaturePrConfig {
   return {
-    sprintBranch: 'sprint/sprint-1',
+    featureBranch: 'feature/feature-1',
     baseBranch: 'master',
-    sprintId: 'sprint-1',
-    sprintName: 'Auth Rewrite',
+    featureId: 'feature-1',
+    featureName: 'Auth Rewrite',
     workItems: [
       { id: 'wi-1', title: 'Add login endpoint', status: 'MERGED' },
       { id: 'wi-2', title: 'Add logout endpoint', status: 'MERGED' },
@@ -34,13 +34,13 @@ function makeConfig(overrides: Partial<SprintPrConfig> = {}): SprintPrConfig {
 // ---------------------------------------------------------------------------
 
 describe('buildPrTitle', () => {
-  it('includes sprint name and id', () => {
+  it('includes feature name and id', () => {
     const title = buildPrTitle(makeConfig());
-    expect(title).toBe('[hive] Auth Rewrite (sprint-1)');
+    expect(title).toBe('[hive] Auth Rewrite (feature-1)');
   });
 
   it('handles names with special characters', () => {
-    const title = buildPrTitle(makeConfig({ sprintName: "Fix O'Brien's bug" }));
+    const title = buildPrTitle(makeConfig({ featureName: "Fix O'Brien's bug" }));
     expect(title).toContain("Fix O'Brien's bug");
   });
 });
@@ -50,19 +50,19 @@ describe('buildPrTitle', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildPrBody', () => {
-  it('includes sprint header', () => {
+  it('includes feature header', () => {
     const body = buildPrBody(makeConfig());
-    expect(body).toContain('## Sprint: Auth Rewrite');
+    expect(body).toContain('## Feature: Auth Rewrite');
   });
 
-  it('includes sprint id', () => {
+  it('includes feature id', () => {
     const body = buildPrBody(makeConfig());
-    expect(body).toContain('`sprint-1`');
+    expect(body).toContain('`feature-1`');
   });
 
   it('includes branch arrow', () => {
     const body = buildPrBody(makeConfig());
-    expect(body).toContain('`sprint/sprint-1` → `master`');
+    expect(body).toContain('`feature/feature-1` → `master`');
   });
 
   it('includes work items table header', () => {
@@ -99,17 +99,17 @@ describe('buildPrCreateCommand', () => {
     const result = buildPrCreateCommand(makeConfig());
     expect(result.command).toContain('gh pr create');
     expect(result.command).toContain("--base 'master'");
-    expect(result.command).toContain("--head 'sprint/sprint-1'");
+    expect(result.command).toContain("--head 'feature/feature-1'");
   });
 
   it('returns title and body separately', () => {
     const result = buildPrCreateCommand(makeConfig());
-    expect(result.title).toBe('[hive] Auth Rewrite (sprint-1)');
-    expect(result.body).toContain('## Sprint: Auth Rewrite');
+    expect(result.title).toBe('[hive] Auth Rewrite (feature-1)');
+    expect(result.body).toContain('## Feature: Auth Rewrite');
   });
 
   it('escapes single quotes in title', () => {
-    const result = buildPrCreateCommand(makeConfig({ sprintName: "O'Reilly" }));
+    const result = buildPrCreateCommand(makeConfig({ featureName: "O'Reilly" }));
     expect(result.command).toContain("O'\\''Reilly");
   });
 
@@ -200,42 +200,42 @@ describe('buildPrCommentCommand', () => {
 });
 
 // ---------------------------------------------------------------------------
-// validateSprintPrConfig
+// validateFeaturePrConfig
 // ---------------------------------------------------------------------------
 
-describe('validateSprintPrConfig', () => {
+describe('validateFeaturePrConfig', () => {
   it('returns no errors for valid config', () => {
-    const errors = validateSprintPrConfig(makeConfig());
+    const errors = validateFeaturePrConfig(makeConfig());
     expect(errors).toEqual([]);
   });
 
-  it('requires sprintBranch', () => {
-    const errors = validateSprintPrConfig(makeConfig({ sprintBranch: '' }));
-    expect(errors).toContain('sprintBranch is required');
+  it('requires featureBranch', () => {
+    const errors = validateFeaturePrConfig(makeConfig({ featureBranch: '' }));
+    expect(errors).toContain('featureBranch is required');
   });
 
   it('requires baseBranch', () => {
-    const errors = validateSprintPrConfig(makeConfig({ baseBranch: '' }));
+    const errors = validateFeaturePrConfig(makeConfig({ baseBranch: '' }));
     expect(errors).toContain('baseBranch is required');
   });
 
-  it('requires sprintId', () => {
-    const errors = validateSprintPrConfig(makeConfig({ sprintId: '' }));
-    expect(errors).toContain('sprintId is required');
+  it('requires featureId', () => {
+    const errors = validateFeaturePrConfig(makeConfig({ featureId: '' }));
+    expect(errors).toContain('featureId is required');
   });
 
-  it('requires sprintName', () => {
-    const errors = validateSprintPrConfig(makeConfig({ sprintName: '' }));
-    expect(errors).toContain('sprintName is required');
+  it('requires featureName', () => {
+    const errors = validateFeaturePrConfig(makeConfig({ featureName: '' }));
+    expect(errors).toContain('featureName is required');
   });
 
   it('requires at least one work item', () => {
-    const errors = validateSprintPrConfig(makeConfig({ workItems: [] }));
+    const errors = validateFeaturePrConfig(makeConfig({ workItems: [] }));
     expect(errors).toContain('workItems must contain at least one item');
   });
 
   it('requires all work items to be MERGED', () => {
-    const errors = validateSprintPrConfig(
+    const errors = validateFeaturePrConfig(
       makeConfig({
         workItems: [
           { id: 'wi-1', title: 'Done', status: 'MERGED' },
@@ -249,7 +249,7 @@ describe('validateSprintPrConfig', () => {
   });
 
   it('lists multiple non-merged work items', () => {
-    const errors = validateSprintPrConfig(
+    const errors = validateFeaturePrConfig(
       makeConfig({
         workItems: [
           { id: 'wi-1', title: 'A', status: 'REVIEW' },
@@ -262,11 +262,11 @@ describe('validateSprintPrConfig', () => {
   });
 
   it('collects multiple errors at once', () => {
-    const errors = validateSprintPrConfig({
-      sprintBranch: '',
+    const errors = validateFeaturePrConfig({
+      featureBranch: '',
       baseBranch: '',
-      sprintId: '',
-      sprintName: '',
+      featureId: '',
+      featureName: '',
       workItems: [],
     });
     expect(errors.length).toBeGreaterThanOrEqual(5);
