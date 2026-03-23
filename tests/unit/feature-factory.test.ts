@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
-  createSprint,
+  createFeature,
   createWorkItem,
   getNextId,
   incrementSequence,
   type FsOps,
   type SequenceData,
-  type SprintConfig,
-  type SprintData,
+  type FeatureConfig,
+  type FeatureData,
   type WorkItemConfig,
   type WorkItemData,
-} from '../../src/sprint-factory.js';
+} from '../../src/feature-factory.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -29,10 +29,10 @@ function makeFsOps(files: Record<string, string>): FsOps {
   };
 }
 
-function seedSprintFs(): { files: Record<string, string>; fs: FsOps } {
+function seedFeatureFs(): { files: Record<string, string>; fs: FsOps } {
   const files: Record<string, string> = {
-    '/h/sprints/_sequence.json': JSON.stringify({ next_id: 1 }),
-    '/h/sprints/_index.json': JSON.stringify({ items: [] }),
+    '/h/features/_sequence.json': JSON.stringify({ next_id: 1 }),
+    '/h/features/_index.json': JSON.stringify({ items: [] }),
   };
   return { files, fs: makeFsOps(files) };
 }
@@ -45,8 +45,8 @@ function seedWorkItemFs(): { files: Record<string, string>; fs: FsOps } {
   return { files, fs: makeFsOps(files) };
 }
 
-const BASE_SPRINT_CONFIG: SprintConfig = {
-  name: 'Test Sprint',
+const BASE_FEATURE_CONFIG: FeatureConfig = {
+  name: 'Test Feature',
   plan: 'plan-test.md',
 };
 
@@ -54,7 +54,7 @@ const BASE_WI_CONFIG: WorkItemConfig = {
   title: 'Implement feature X',
   type: 'feature',
   risk: 'medium',
-  sprint: 'sprint-1',
+  feature: 'feature-1',
   description: 'Build feature X',
   acceptance_criteria: ['It works', 'Tests pass'],
 };
@@ -100,157 +100,157 @@ describe('incrementSequence', () => {
 });
 
 // ---------------------------------------------------------------------------
-// createSprint
+// createFeature
 // ---------------------------------------------------------------------------
 
-describe('createSprint', () => {
+describe('createFeature', () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-03-22T10:00:00.000Z'));
   });
 
-  it('should create a sprint with correct id and fields', () => {
-    const { fs } = seedSprintFs();
-    const sprint = createSprint(BASE_SPRINT_CONFIG, '/h', fs);
+  it('should create a feature with correct id and fields', () => {
+    const { fs } = seedFeatureFs();
+    const feature = createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    expect(sprint.id).toBe('sprint-1');
-    expect(sprint.name).toBe('Test Sprint');
-    expect(sprint.status).toBe('IN_PROGRESS');
-    expect(sprint.plan).toBe('plan-test.md');
-    expect(sprint.work_items).toEqual([]);
-    expect(sprint.agents).toEqual([]);
-    expect(sprint.created_at).toBe('2026-03-22T10:00:00.000Z');
-    expect(sprint.updated_at).toBe('2026-03-22T10:00:00.000Z');
+    expect(feature.id).toBe('feature-1');
+    expect(feature.name).toBe('Test Feature');
+    expect(feature.status).toBe('IN_PROGRESS');
+    expect(feature.plan).toBe('plan-test.md');
+    expect(feature.work_items).toEqual([]);
+    expect(feature.agents).toEqual([]);
+    expect(feature.created_at).toBe('2026-03-22T10:00:00.000Z');
+    expect(feature.updated_at).toBe('2026-03-22T10:00:00.000Z');
   });
 
-  it('should write the sprint JSON file to disk', () => {
-    const { files, fs } = seedSprintFs();
-    createSprint(BASE_SPRINT_CONFIG, '/h', fs);
+  it('should write the feature JSON file to disk', () => {
+    const { files, fs } = seedFeatureFs();
+    createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    const written = JSON.parse(files['/h/sprints/sprint-1.json']);
-    expect(written.id).toBe('sprint-1');
-    expect(written.name).toBe('Test Sprint');
+    const written = JSON.parse(files['/h/features/feature-1.json']);
+    expect(written.id).toBe('feature-1');
+    expect(written.name).toBe('Test Feature');
     expect(written.status).toBe('IN_PROGRESS');
   });
 
   it('should increment the sequence number', () => {
-    const { files, fs } = seedSprintFs();
-    createSprint(BASE_SPRINT_CONFIG, '/h', fs);
+    const { files, fs } = seedFeatureFs();
+    createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    const seq = JSON.parse(files['/h/sprints/_sequence.json']);
+    const seq = JSON.parse(files['/h/features/_sequence.json']);
     expect(seq.next_id).toBe(2);
   });
 
-  it('should update the sprint index', () => {
-    const { files, fs } = seedSprintFs();
-    createSprint(BASE_SPRINT_CONFIG, '/h', fs);
+  it('should update the feature index', () => {
+    const { files, fs } = seedFeatureFs();
+    createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    const index = JSON.parse(files['/h/sprints/_index.json']);
-    expect(index.items).toEqual([{ id: 'sprint-1', status: 'IN_PROGRESS' }]);
+    const index = JSON.parse(files['/h/features/_index.json']);
+    expect(index.items).toEqual([{ id: 'feature-1', status: 'IN_PROGRESS' }]);
   });
 
   it('should auto-increment ids across multiple calls', () => {
-    const { files, fs } = seedSprintFs();
+    const { files, fs } = seedFeatureFs();
 
-    const s1 = createSprint({ name: 'Sprint A', plan: 'a.md' }, '/h', fs);
-    const s2 = createSprint({ name: 'Sprint B', plan: 'b.md' }, '/h', fs);
+    const s1 = createFeature({ name: 'Feature A', plan: 'a.md' }, '/h', fs);
+    const s2 = createFeature({ name: 'Feature B', plan: 'b.md' }, '/h', fs);
 
-    expect(s1.id).toBe('sprint-1');
-    expect(s2.id).toBe('sprint-2');
+    expect(s1.id).toBe('feature-1');
+    expect(s2.id).toBe('feature-2');
 
-    const seq = JSON.parse(files['/h/sprints/_sequence.json']);
+    const seq = JSON.parse(files['/h/features/_sequence.json']);
     expect(seq.next_id).toBe(3);
 
-    const index = JSON.parse(files['/h/sprints/_index.json']);
+    const index = JSON.parse(files['/h/features/_index.json']);
     expect(index.items).toHaveLength(2);
   });
 
   it('should include agents when provided', () => {
-    const { fs } = seedSprintFs();
-    const sprint = createSprint(
-      { ...BASE_SPRINT_CONFIG, agents: ['dev-1', 'dev-2'] },
+    const { fs } = seedFeatureFs();
+    const feature = createFeature(
+      { ...BASE_FEATURE_CONFIG, agents: ['dev-1', 'dev-2'] },
       '/h',
       fs,
     );
-    expect(sprint.agents).toEqual(['dev-1', 'dev-2']);
+    expect(feature.agents).toEqual(['dev-1', 'dev-2']);
   });
 
-  it('should throw on duplicate sprint file', () => {
-    const { files, fs } = seedSprintFs();
-    files['/h/sprints/sprint-1.json'] = '{}';
+  it('should throw on duplicate feature file', () => {
+    const { files, fs } = seedFeatureFs();
+    files['/h/features/feature-1.json'] = '{}';
 
-    expect(() => createSprint(BASE_SPRINT_CONFIG, '/h', fs)).toThrow(
-      'Sprint file already exists',
+    expect(() => createFeature(BASE_FEATURE_CONFIG, '/h', fs)).toThrow(
+      'Feature file already exists',
     );
   });
 
   it('should start from existing sequence number', () => {
     const files: Record<string, string> = {
-      '/h/sprints/_sequence.json': JSON.stringify({ next_id: 5 }),
-      '/h/sprints/_index.json': JSON.stringify({ items: [] }),
+      '/h/features/_sequence.json': JSON.stringify({ next_id: 5 }),
+      '/h/features/_index.json': JSON.stringify({ items: [] }),
     };
     const fs = makeFsOps(files);
 
-    const sprint = createSprint(BASE_SPRINT_CONFIG, '/h', fs);
-    expect(sprint.id).toBe('sprint-5');
+    const feature = createFeature(BASE_FEATURE_CONFIG, '/h', fs);
+    expect(feature.id).toBe('feature-5');
 
-    const seq = JSON.parse(files['/h/sprints/_sequence.json']);
+    const seq = JSON.parse(files['/h/features/_sequence.json']);
     expect(seq.next_id).toBe(6);
   });
 
   it('should append to existing index items', () => {
     const files: Record<string, string> = {
-      '/h/sprints/_sequence.json': JSON.stringify({ next_id: 2 }),
-      '/h/sprints/_index.json': JSON.stringify({
-        items: [{ id: 'sprint-1', status: 'IN_PROGRESS' }],
+      '/h/features/_sequence.json': JSON.stringify({ next_id: 2 }),
+      '/h/features/_index.json': JSON.stringify({
+        items: [{ id: 'feature-1', status: 'IN_PROGRESS' }],
       }),
     };
     const fs = makeFsOps(files);
 
-    createSprint(BASE_SPRINT_CONFIG, '/h', fs);
+    createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    const index = JSON.parse(files['/h/sprints/_index.json']);
+    const index = JSON.parse(files['/h/features/_index.json']);
     expect(index.items).toHaveLength(2);
-    expect(index.items[1]).toEqual({ id: 'sprint-2', status: 'IN_PROGRESS' });
+    expect(index.items[1]).toEqual({ id: 'feature-2', status: 'IN_PROGRESS' });
   });
 
   it('should include correct branch field', () => {
-    const { fs } = seedSprintFs();
-    const sprint = createSprint(BASE_SPRINT_CONFIG, '/h', fs);
-    expect(sprint.branch).toBe('sprint/sprint-1');
+    const { fs } = seedFeatureFs();
+    const feature = createFeature(BASE_FEATURE_CONFIG, '/h', fs);
+    expect(feature.branch).toBe('feature/feature-1');
   });
 
   it('should use custom branch when provided in config', () => {
-    const { fs } = seedSprintFs();
-    const sprint = createSprint(
-      { ...BASE_SPRINT_CONFIG, branch: 'sprint/sprint-42' },
+    const { fs } = seedFeatureFs();
+    const feature = createFeature(
+      { ...BASE_FEATURE_CONFIG, branch: 'feature/feature-42' },
       '/h',
       fs,
     );
-    expect(sprint.branch).toBe('sprint/sprint-42');
+    expect(feature.branch).toBe('feature/feature-42');
   });
 
-  it('should produce an object matching sprint schema structure', () => {
-    const { fs } = seedSprintFs();
-    const sprint = createSprint(
-      { ...BASE_SPRINT_CONFIG, agents: ['dev-1'] },
+  it('should produce an object matching feature schema structure', () => {
+    const { fs } = seedFeatureFs();
+    const feature = createFeature(
+      { ...BASE_FEATURE_CONFIG, agents: ['dev-1'] },
       '/h',
       fs,
     );
 
     // Verify all required schema fields are present
-    expect(sprint).toHaveProperty('id');
-    expect(sprint).toHaveProperty('name');
-    expect(sprint).toHaveProperty('status');
-    expect(sprint).toHaveProperty('plan');
-    expect(sprint).toHaveProperty('branch');
-    expect(sprint).toHaveProperty('created_at');
-    expect(sprint).toHaveProperty('updated_at');
-    expect(sprint).toHaveProperty('work_items');
-    expect(sprint).toHaveProperty('agents');
+    expect(feature).toHaveProperty('id');
+    expect(feature).toHaveProperty('name');
+    expect(feature).toHaveProperty('status');
+    expect(feature).toHaveProperty('plan');
+    expect(feature).toHaveProperty('branch');
+    expect(feature).toHaveProperty('created_at');
+    expect(feature).toHaveProperty('updated_at');
+    expect(feature).toHaveProperty('work_items');
+    expect(feature).toHaveProperty('agents');
 
     // Verify id pattern
-    expect(sprint.id).toMatch(/^sprint-\d+$/);
+    expect(feature.id).toMatch(/^feature-\d+$/);
   });
 });
 
@@ -274,7 +274,7 @@ describe('createWorkItem', () => {
     expect(wi.risk).toBe('medium');
     expect(wi.status).toBe('OPEN');
     expect(wi.assignee).toBeNull();
-    expect(wi.sprint).toBe('sprint-1');
+    expect(wi.feature).toBe('feature-1');
     expect(wi.branch).toBeNull();
     expect(wi.description).toBe('Build feature X');
     expect(wi.acceptance_criteria).toEqual(['It works', 'Tests pass']);
@@ -447,7 +447,7 @@ describe('createWorkItem', () => {
     expect(wi).toHaveProperty('risk');
     expect(wi).toHaveProperty('status');
     expect(wi).toHaveProperty('assignee');
-    expect(wi).toHaveProperty('sprint');
+    expect(wi).toHaveProperty('feature');
     expect(wi).toHaveProperty('branch');
     expect(wi).toHaveProperty('description');
     expect(wi).toHaveProperty('acceptance_criteria');

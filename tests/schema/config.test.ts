@@ -134,9 +134,9 @@ describe('state machine alignment', () => {
     }
   });
 
-  it('sprint schema statuses are documented in hive.md', () => {
-    const sprintSchema = loadSchema('sprint.schema.json');
-    const schemaStatuses: string[] = sprintSchema.properties.status.enum;
+  it('feature schema statuses are documented in hive.md', () => {
+    const featureSchema = loadSchema('feature.schema.json');
+    const schemaStatuses: string[] = featureSchema.properties.status.enum;
 
     const hiveMd = readFileSync(
       join(ROOT, 'plugins/hive/agents/hive.md'),
@@ -146,7 +146,7 @@ describe('state machine alignment', () => {
     for (const status of schemaStatuses) {
       expect(
         hiveMd,
-        `Sprint status "${status}" from schema not found in hive.md`,
+        `Feature status "${status}" from schema not found in hive.md`,
       ).toContain(status);
     }
   });
@@ -337,7 +337,7 @@ describe('hive.md bootstrap structure validation', () => {
       join(ROOT, 'plugins/hive/agents/hive.md'),
       'utf-8',
     );
-    const requiredDirs = ['plans', 'research', 'work-items', 'sprints', 'agents', 'logs', 'archive'];
+    const requiredDirs = ['plans', 'research', 'work-items', 'features', 'agents', 'logs', 'archive'];
     for (const dir of requiredDirs) {
       expect(
         hiveMd,

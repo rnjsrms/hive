@@ -32,7 +32,7 @@ describe('Work item schema', () => {
     risk: 'medium',
     status: 'OPEN',
     assignee: null,
-    sprint: 'sprint-1',
+    feature: 'feature-1',
     branch: null,
     description: 'Implement the login page',
     acceptance_criteria: ['Users can log in', 'Error messages shown'],
@@ -114,42 +114,42 @@ describe('Work item schema', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Sprint schema
+// Feature schema
 // ---------------------------------------------------------------------------
 
-describe('Sprint schema', () => {
-  const validSprint = {
-    id: 'sprint-1',
+describe('Feature schema', () => {
+  const validFeature = {
+    id: 'feature-1',
     name: 'Login Feature',
     status: 'IN_PROGRESS',
     plan: 'plan-2025-01-01.md',
-    branch: 'sprint/sprint-1',
+    branch: 'feature/feature-1',
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
     work_items: ['wi-1', 'wi-2'],
     agents: ['dev-1', 'reviewer', 'tester'],
   };
 
-  it('validates a correct sprint', () => {
-    const validate = ajv.compile(loadSchema('sprint.schema.json'));
-    expect(validate(validSprint)).toBe(true);
+  it('validates a correct feature', () => {
+    const validate = ajv.compile(loadSchema('feature.schema.json'));
+    expect(validate(validFeature)).toBe(true);
   });
 
   it('rejects missing required fields', () => {
-    const validate = ajv.compile(loadSchema('sprint.schema.json'));
-    const incomplete = { id: 'sprint-1', name: 'Test' };
+    const validate = ajv.compile(loadSchema('feature.schema.json'));
+    const incomplete = { id: 'feature-1', name: 'Test' };
     expect(validate(incomplete)).toBe(false);
   });
 
   it('rejects invalid status', () => {
-    const validate = ajv.compile(loadSchema('sprint.schema.json'));
-    const bad = { ...validSprint, status: 'running' };
+    const validate = ajv.compile(loadSchema('feature.schema.json'));
+    const bad = { ...validFeature, status: 'running' };
     expect(validate(bad)).toBe(false);
   });
 
   it('rejects invalid id pattern', () => {
-    const validate = ajv.compile(loadSchema('sprint.schema.json'));
-    const bad = { ...validSprint, id: 'SPRINT-1' };
+    const validate = ajv.compile(loadSchema('feature.schema.json'));
+    const bad = { ...validFeature, id: 'FEATURE-1' };
     expect(validate(bad)).toBe(false);
   });
 });
@@ -161,8 +161,8 @@ describe('Sprint schema', () => {
 describe('Agent registry schema', () => {
   const validRegistry = {
     agents: [
-      { id: 'dev-1', role: 'developer', status: 'ACTIVE', current_work_item: 'wi-1', sprint_id: 'sprint-1', last_heartbeat: null },
-      { id: 'reviewer', role: 'reviewer', status: 'IDLE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: '2026-01-01T00:00:00Z' },
+      { id: 'dev-1', role: 'developer', status: 'ACTIVE', current_work_item: 'wi-1', feature_id: 'feature-1', last_heartbeat: null },
+      { id: 'reviewer', role: 'reviewer', status: 'IDLE', current_work_item: null, feature_id: 'feature-1', last_heartbeat: '2026-01-01T00:00:00Z' },
     ],
   };
 
@@ -179,7 +179,7 @@ describe('Agent registry schema', () => {
   it('validates specialized role with colon notation (reviewer:security)', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const specialized = {
-      agents: [{ id: 'reviewer-sec', role: 'reviewer:security', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],
+      agents: [{ id: 'reviewer-sec', role: 'reviewer:security', status: 'ACTIVE', current_work_item: null, feature_id: 'feature-1', last_heartbeat: null }],
     };
     expect(validate(specialized)).toBe(true);
   });
@@ -190,7 +190,7 @@ describe('Agent registry schema', () => {
       agents: [{
         id: 'reviewer-sec', role: 'reviewer:security', status: 'ACTIVE',
         specialization: 'security', brief: 'Focus on auth and injection attacks.',
-        current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null,
+        current_work_item: null, feature_id: 'feature-1', last_heartbeat: null,
       }],
     };
     expect(validate(withSpec)).toBe(true);
@@ -202,7 +202,7 @@ describe('Agent registry schema', () => {
       agents: [{
         id: 'dev-1', role: 'developer', status: 'ACTIVE',
         specialization: null, brief: null,
-        current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null,
+        current_work_item: null, feature_id: 'feature-1', last_heartbeat: null,
       }],
     };
     expect(validate(withNull)).toBe(true);
@@ -211,7 +211,7 @@ describe('Agent registry schema', () => {
   it('rejects invalid base role in specialized notation', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'manager:security', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],
+      agents: [{ id: 'x', role: 'manager:security', status: 'ACTIVE', current_work_item: null, feature_id: 'feature-1', last_heartbeat: null }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -219,7 +219,7 @@ describe('Agent registry schema', () => {
   it('rejects invalid role (no colon, not a base role)', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'manager', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],
+      agents: [{ id: 'x', role: 'manager', status: 'ACTIVE', current_work_item: null, feature_id: 'feature-1', last_heartbeat: null }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -227,12 +227,12 @@ describe('Agent registry schema', () => {
   it('rejects invalid status', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'running', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null }],
+      agents: [{ id: 'x', role: 'developer', status: 'running', current_work_item: null, feature_id: 'feature-1', last_heartbeat: null }],
     };
     expect(validate(bad)).toBe(false);
   });
 
-  it('rejects agent entry missing sprint_id', () => {
+  it('rejects agent entry missing feature_id', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
       agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, last_heartbeat: null }],
@@ -243,7 +243,7 @@ describe('Agent registry schema', () => {
   it('rejects agent entry missing last_heartbeat', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1' }],
+      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, feature_id: 'feature-1' }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -251,7 +251,7 @@ describe('Agent registry schema', () => {
   it('rejects last_heartbeat with invalid date-time format', () => {
     const validate = ajv.compile(loadSchema('agent-registry.schema.json'));
     const bad = {
-      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: 'not-a-date' }],
+      agents: [{ id: 'x', role: 'developer', status: 'ACTIVE', current_work_item: null, feature_id: 'feature-1', last_heartbeat: 'not-a-date' }],
     };
     expect(validate(bad)).toBe(false);
   });
@@ -332,7 +332,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     expect(validate({
       agents: [{
         id: 'dev-1', role: 'developer', status: 'ACTIVE',
-        current_work_item: null, sprint_id: 'sprint-1', last_heartbeat: null,
+        current_work_item: null, feature_id: 'feature-1', last_heartbeat: null,
         rogue_field: true,
       }],
     })).toBe(false);
@@ -366,7 +366,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const valid = {
       id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'OPEN', sprint: 'sprint-1', description: 'Test',
+      status: 'OPEN', feature: 'feature-1', description: 'Test',
       acceptance_criteria: [], dependencies: [], history: [],
       created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
     };
@@ -378,7 +378,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const wi = {
       id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'OPEN', sprint: 'sprint-1', description: 'Test',
+      status: 'OPEN', feature: 'feature-1', description: 'Test',
       acceptance_criteria: [], dependencies: [],
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -393,7 +393,7 @@ describe('Schema strictness (additionalProperties: false)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const wi = {
       id: 'wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'OPEN', sprint: 'sprint-1', description: 'Test',
+      status: 'OPEN', feature: 'feature-1', description: 'Test',
       acceptance_criteria: [], dependencies: [],
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z', rogue_field: 'bad' },
