@@ -50,7 +50,6 @@ export function getRequiredFiles(baseBranch: string = 'develop'): Record<string,
   return {
     'config.json': { name: 'hive', version: '2.2.0', base_branch: baseBranch },
     'work-items/_index.json': { items: [] },
-    'work-items/_sequence.json': { next_id: 1 },
     'features/_index.json': { items: [] },
     'agents/_index.json': { agents: [] },
     'role-catalog.json': DEFAULT_ROLE_CATALOG,
