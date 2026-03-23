@@ -325,7 +325,6 @@ describeIf('module-script mirror: bootstrap required files', () => {
     fs.writeFileSync(path.join(hiveDir, 'work-items', '_index.json'), '{"items":[]}');
     fs.writeFileSync(path.join(hiveDir, 'work-items', '_sequence.json'), '{"next_id":1}');
     fs.writeFileSync(path.join(hiveDir, 'features', '_index.json'), '{"items":[]}');
-    fs.writeFileSync(path.join(hiveDir, 'features', '_sequence.json'), '{"next_id":1}');
     fs.writeFileSync(path.join(hiveDir, 'agents', '_index.json'), '{"agents":[]}');
     fs.writeFileSync(path.join(hiveDir, 'config.json'), '{"name":"hive","version":"2.2.0","base_branch":"master"}');
     // Intentionally omit role-catalog.json

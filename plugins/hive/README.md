@@ -40,14 +40,14 @@ When enabled, every `claude` session starts as the Hive lead orchestrator. The `
 
 ```
 develop (base branch)
-  └── feature-1 (feature branch)
-        ├── feature-1_wi-1 (work item branch)
-        ├── feature-1_wi-2
-        └── feature-1_wi-3
+  └── feature/ABC-1234 (feature branch)
+        ├── feature/ABC-1234_WI-1 (work item branch)
+        ├── feature/ABC-1234_WI-2
+        └── feature/ABC-1234_WI-3
 ```
 
 - Base branch detection: `develop` → auto-detect → `main` (fallback)
-- WI IDs are feature-scoped: `feature-1_wi-1` is unique globally
+- WI IDs are feature-scoped: `ABC-1234_WI-1` is unique globally
 - Merge flow: WI → feature (lead, --no-ff) → base branch (user PR)
 - All agents fetch latest before starting work
 
@@ -74,7 +74,7 @@ develop (base branch)
 ├── role-catalog.json   # Reviewer specializations
 ├── plans/              # Planning documents
 ├── research/           # Research findings
-├── work-items/         # Work item state (feature-scoped IDs)
+├── work-items/         # Work item state ({ticket-id}_WI-{id} format)
 ├── features/           # Feature groupings (with per-feature WI counter)
 ├── agents/             # Agent registry
 ├── archive/            # Completed/cancelled features

@@ -3,14 +3,14 @@
   "type": "object",
   "required": ["id", "name", "status", "plan", "branch", "created_at", "updated_at", "work_items", "agents", "next_wi_id"],
   "properties": {
-    "id": { "type": "string", "pattern": "^feature-\\d+$" },
+    "id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]+-\\d+$" },
     "name": { "type": "string", "minLength": 1 },
     "status": { "type": "string", "enum": ["PLANNING", "IN_PROGRESS", "AGENTS_COMPLETE", "MERGED", "CANCELLED"] },
     "plan": { "type": "string" },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" },
     "work_items": { "type": "array", "items": { "type": "string" } },
-    "branch": { "type": "string", "pattern": "^feature-\\d+$" },
+    "branch": { "type": "string", "pattern": "^feature/[A-Z][A-Z0-9]+-\\d+$" },
     "agents": { "type": "array", "items": { "type": "string" } },
     "next_wi_id": { "type": "integer", "minimum": 1 }
   },

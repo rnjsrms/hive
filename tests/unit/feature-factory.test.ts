@@ -31,7 +31,6 @@ function makeFsOps(files: Record<string, string>): FsOps {
 
 function seedFeatureFs(): { files: Record<string, string>; fs: FsOps } {
   const files: Record<string, string> = {
-    '/h/features/_sequence.json': JSON.stringify({ next_id: 1 }),
     '/h/features/_index.json': JSON.stringify({ items: [] }),
   };
   return { files, fs: makeFsOps(files) };
@@ -40,9 +39,9 @@ function seedFeatureFs(): { files: Record<string, string>; fs: FsOps } {
 function seedWorkItemFs(): { files: Record<string, string>; fs: FsOps } {
   const files: Record<string, string> = {
     '/h/work-items/_index.json': JSON.stringify({ items: [] }),
-    '/h/features/feature-1.json': JSON.stringify({
-      id: 'feature-1', name: 'Test', status: 'IN_PROGRESS',
-      plan: 'test.md', branch: 'feature-1',
+    '/h/features/TEST-1.json': JSON.stringify({
+      id: 'TEST-1', name: 'Test', status: 'IN_PROGRESS',
+      plan: 'test.md', branch: 'feature/TEST-1',
       created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
       work_items: [], agents: [], next_wi_id: 1
     }),
@@ -51,6 +50,7 @@ function seedWorkItemFs(): { files: Record<string, string>; fs: FsOps } {
 }
 
 const BASE_FEATURE_CONFIG: FeatureConfig = {
+  ticketId: 'TEST-1',
   name: 'Test Feature',
   plan: 'plan-test.md',
 };
@@ -59,7 +59,7 @@ const BASE_WI_CONFIG: WorkItemConfig = {
   title: 'Implement feature X',
   type: 'feature',
   risk: 'medium',
-  feature: 'feature-1',
+  feature: 'TEST-1',
   description: 'Build feature X',
   acceptance_criteria: ['It works', 'Tests pass'],
 };
@@ -118,7 +118,7 @@ describe('createFeature', () => {
     const { fs } = seedFeatureFs();
     const feature = createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    expect(feature.id).toBe('feature-1');
+    expect(feature.id).toBe('TEST-1');
     expect(feature.name).toBe('Test Feature');
     expect(feature.status).toBe('IN_PROGRESS');
     expect(feature.plan).toBe('plan-test.md');
@@ -133,18 +133,10 @@ describe('createFeature', () => {
     const { files, fs } = seedFeatureFs();
     createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
-    const written = JSON.parse(files['/h/features/feature-1.json']);
-    expect(written.id).toBe('feature-1');
+    const written = JSON.parse(files['/h/features/TEST-1.json']);
+    expect(written.id).toBe('TEST-1');
     expect(written.name).toBe('Test Feature');
     expect(written.status).toBe('IN_PROGRESS');
-  });
-
-  it('should increment the sequence number', () => {
-    const { files, fs } = seedFeatureFs();
-    createFeature(BASE_FEATURE_CONFIG, '/h', fs);
-
-    const seq = JSON.parse(files['/h/features/_sequence.json']);
-    expect(seq.next_id).toBe(2);
   });
 
   it('should update the feature index', () => {
@@ -152,23 +144,7 @@ describe('createFeature', () => {
     createFeature(BASE_FEATURE_CONFIG, '/h', fs);
 
     const index = JSON.parse(files['/h/features/_index.json']);
-    expect(index.items).toEqual([{ id: 'feature-1', status: 'IN_PROGRESS' }]);
-  });
-
-  it('should auto-increment ids across multiple calls', () => {
-    const { files, fs } = seedFeatureFs();
-
-    const s1 = createFeature({ name: 'Feature A', plan: 'a.md' }, '/h', fs);
-    const s2 = createFeature({ name: 'Feature B', plan: 'b.md' }, '/h', fs);
-
-    expect(s1.id).toBe('feature-1');
-    expect(s2.id).toBe('feature-2');
-
-    const seq = JSON.parse(files['/h/features/_sequence.json']);
-    expect(seq.next_id).toBe(3);
-
-    const index = JSON.parse(files['/h/features/_index.json']);
-    expect(index.items).toHaveLength(2);
+    expect(index.items).toEqual([{ id: 'TEST-1', status: 'IN_PROGRESS' }]);
   });
 
   it('should include agents when provided', () => {
@@ -183,57 +159,42 @@ describe('createFeature', () => {
 
   it('should throw on duplicate feature file', () => {
     const { files, fs } = seedFeatureFs();
-    files['/h/features/feature-1.json'] = '{}';
+    files['/h/features/TEST-1.json'] = '{}';
 
     expect(() => createFeature(BASE_FEATURE_CONFIG, '/h', fs)).toThrow(
       'Feature file already exists',
     );
   });
 
-  it('should start from existing sequence number', () => {
-    const files: Record<string, string> = {
-      '/h/features/_sequence.json': JSON.stringify({ next_id: 5 }),
-      '/h/features/_index.json': JSON.stringify({ items: [] }),
-    };
-    const fs = makeFsOps(files);
-
-    const feature = createFeature(BASE_FEATURE_CONFIG, '/h', fs);
-    expect(feature.id).toBe('feature-5');
-
-    const seq = JSON.parse(files['/h/features/_sequence.json']);
-    expect(seq.next_id).toBe(6);
-  });
-
   it('should append to existing index items', () => {
     const files: Record<string, string> = {
-      '/h/features/_sequence.json': JSON.stringify({ next_id: 2 }),
       '/h/features/_index.json': JSON.stringify({
-        items: [{ id: 'feature-1', status: 'IN_PROGRESS' }],
+        items: [{ id: 'TEST-1', status: 'IN_PROGRESS' }],
       }),
     };
     const fs = makeFsOps(files);
 
-    createFeature(BASE_FEATURE_CONFIG, '/h', fs);
+    createFeature({ ...BASE_FEATURE_CONFIG, ticketId: 'TEST-2' }, '/h', fs);
 
     const index = JSON.parse(files['/h/features/_index.json']);
     expect(index.items).toHaveLength(2);
-    expect(index.items[1]).toEqual({ id: 'feature-2', status: 'IN_PROGRESS' });
+    expect(index.items[1]).toEqual({ id: 'TEST-2', status: 'IN_PROGRESS' });
   });
 
   it('should include correct branch field', () => {
     const { fs } = seedFeatureFs();
     const feature = createFeature(BASE_FEATURE_CONFIG, '/h', fs);
-    expect(feature.branch).toBe('feature-1');
+    expect(feature.branch).toBe('feature/TEST-1');
   });
 
   it('should use custom branch when provided in config', () => {
     const { fs } = seedFeatureFs();
     const feature = createFeature(
-      { ...BASE_FEATURE_CONFIG, branch: 'feature-42' },
+      { ...BASE_FEATURE_CONFIG, branch: 'feature/CUSTOM-42' },
       '/h',
       fs,
     );
-    expect(feature.branch).toBe('feature-42');
+    expect(feature.branch).toBe('feature/CUSTOM-42');
   });
 
   it('should produce an object matching feature schema structure', () => {
@@ -256,8 +217,17 @@ describe('createFeature', () => {
     expect(feature).toHaveProperty('agents');
     expect(feature).toHaveProperty('next_wi_id');
 
-    // Verify id pattern
-    expect(feature.id).toMatch(/^feature-\d+$/);
+    // Verify id pattern (Jira-style)
+    expect(feature.id).toMatch(/^[A-Z][A-Z0-9]+-\d+$/);
+  });
+
+  it('should throw for invalid ticket ID format', () => {
+    const { fs } = seedFeatureFs();
+    expect(() => createFeature(
+      { ...BASE_FEATURE_CONFIG, ticketId: 'lowercase-1' },
+      '/h',
+      fs,
+    )).toThrow(/Invalid ticket ID/);
   });
 });
 
@@ -275,13 +245,13 @@ describe('createWorkItem', () => {
     const { fs } = seedWorkItemFs();
     const wi = createWorkItem(BASE_WI_CONFIG, '/h', fs);
 
-    expect(wi.id).toBe('feature-1_wi-1');
+    expect(wi.id).toBe('TEST-1_WI-1');
     expect(wi.title).toBe('Implement feature X');
     expect(wi.type).toBe('feature');
     expect(wi.risk).toBe('medium');
     expect(wi.status).toBe('OPEN');
     expect(wi.assignee).toBeNull();
-    expect(wi.feature).toBe('feature-1');
+    expect(wi.feature).toBe('TEST-1');
     expect(wi.branch).toBeNull();
     expect(wi.description).toBe('Build feature X');
     expect(wi.acceptance_criteria).toEqual(['It works', 'Tests pass']);
@@ -295,8 +265,8 @@ describe('createWorkItem', () => {
     const { files, fs } = seedWorkItemFs();
     createWorkItem(BASE_WI_CONFIG, '/h', fs);
 
-    const written = JSON.parse(files['/h/work-items/feature-1_wi-1.json']);
-    expect(written.id).toBe('feature-1_wi-1');
+    const written = JSON.parse(files['/h/work-items/TEST-1_WI-1.json']);
+    expect(written.id).toBe('TEST-1_WI-1');
     expect(written.title).toBe('Implement feature X');
   });
 
@@ -304,7 +274,7 @@ describe('createWorkItem', () => {
     const { files, fs } = seedWorkItemFs();
     createWorkItem(BASE_WI_CONFIG, '/h', fs);
 
-    const feature = JSON.parse(files['/h/features/feature-1.json']);
+    const feature = JSON.parse(files['/h/features/TEST-1.json']);
     expect(feature.next_wi_id).toBe(2);
   });
 
@@ -314,7 +284,7 @@ describe('createWorkItem', () => {
 
     const index = JSON.parse(files['/h/work-items/_index.json']);
     expect(index.items).toEqual([
-      { id: 'feature-1_wi-1', status: 'OPEN', assignee: null },
+      { id: 'TEST-1_WI-1', status: 'OPEN', assignee: null },
     ]);
   });
 
@@ -328,10 +298,10 @@ describe('createWorkItem', () => {
       fs,
     );
 
-    expect(w1.id).toBe('feature-1_wi-1');
-    expect(w2.id).toBe('feature-1_wi-2');
+    expect(w1.id).toBe('TEST-1_WI-1');
+    expect(w2.id).toBe('TEST-1_WI-2');
 
-    const feature = JSON.parse(files['/h/features/feature-1.json']);
+    const feature = JSON.parse(files['/h/features/TEST-1.json']);
     expect(feature.next_wi_id).toBe(3);
 
     const index = JSON.parse(files['/h/work-items/_index.json']);
@@ -350,7 +320,7 @@ describe('createWorkItem', () => {
 
   it('should throw on duplicate work item file', () => {
     const { files, fs } = seedWorkItemFs();
-    files['/h/work-items/feature-1_wi-1.json'] = '{}';
+    files['/h/work-items/TEST-1_WI-1.json'] = '{}';
 
     expect(() => createWorkItem(BASE_WI_CONFIG, '/h', fs)).toThrow(
       'Work item file already exists',
@@ -360,9 +330,9 @@ describe('createWorkItem', () => {
   it('should start from existing sequence number', () => {
     const files: Record<string, string> = {
       '/h/work-items/_index.json': JSON.stringify({ items: [] }),
-      '/h/features/feature-1.json': JSON.stringify({
-        id: 'feature-1', name: 'Test', status: 'IN_PROGRESS',
-        plan: 'test.md', branch: 'feature-1',
+      '/h/features/TEST-1.json': JSON.stringify({
+        id: 'TEST-1', name: 'Test', status: 'IN_PROGRESS',
+        plan: 'test.md', branch: 'feature/TEST-1',
         created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
         work_items: [], agents: [], next_wi_id: 19
       }),
@@ -370,20 +340,20 @@ describe('createWorkItem', () => {
     const fs = makeFsOps(files);
 
     const wi = createWorkItem(BASE_WI_CONFIG, '/h', fs);
-    expect(wi.id).toBe('feature-1_wi-19');
+    expect(wi.id).toBe('TEST-1_WI-19');
 
-    const feature = JSON.parse(files['/h/features/feature-1.json']);
+    const feature = JSON.parse(files['/h/features/TEST-1.json']);
     expect(feature.next_wi_id).toBe(20);
   });
 
   it('should append to existing index items', () => {
     const files: Record<string, string> = {
       '/h/work-items/_index.json': JSON.stringify({
-        items: [{ id: 'feature-1_wi-1', status: 'OPEN', assignee: null }],
+        items: [{ id: 'TEST-1_WI-1', status: 'OPEN', assignee: null }],
       }),
-      '/h/features/feature-1.json': JSON.stringify({
-        id: 'feature-1', name: 'Test', status: 'IN_PROGRESS',
-        plan: 'test.md', branch: 'feature-1',
+      '/h/features/TEST-1.json': JSON.stringify({
+        id: 'TEST-1', name: 'Test', status: 'IN_PROGRESS',
+        plan: 'test.md', branch: 'feature/TEST-1',
         created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
         work_items: [], agents: [], next_wi_id: 2
       }),
@@ -394,7 +364,7 @@ describe('createWorkItem', () => {
 
     const index = JSON.parse(files['/h/work-items/_index.json']);
     expect(index.items).toHaveLength(2);
-    expect(index.items[1]).toEqual({ id: 'feature-1_wi-2', status: 'OPEN', assignee: null });
+    expect(index.items[1]).toEqual({ id: 'TEST-1_WI-2', status: 'OPEN', assignee: null });
   });
 
   it('should handle all work item types', () => {
@@ -456,24 +426,24 @@ describe('createWorkItem', () => {
   it('should create independent WI counters across features', () => {
     const files: Record<string, string> = {
       '/h/work-items/_index.json': JSON.stringify({ items: [] }),
-      '/h/features/feature-1.json': JSON.stringify({
-        id: 'feature-1', name: 'Feature A', status: 'IN_PROGRESS',
-        plan: 'a.md', branch: 'feature-1',
+      '/h/features/TEST-1.json': JSON.stringify({
+        id: 'TEST-1', name: 'Feature A', status: 'IN_PROGRESS',
+        plan: 'a.md', branch: 'feature/TEST-1',
         created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
         work_items: [], agents: [], next_wi_id: 1
       }),
-      '/h/features/feature-2.json': JSON.stringify({
-        id: 'feature-2', name: 'Feature B', status: 'IN_PROGRESS',
-        plan: 'b.md', branch: 'feature-2',
+      '/h/features/TEST-2.json': JSON.stringify({
+        id: 'TEST-2', name: 'Feature B', status: 'IN_PROGRESS',
+        plan: 'b.md', branch: 'feature/TEST-2',
         created_at: '2026-03-22T10:00:00.000Z', updated_at: '2026-03-22T10:00:00.000Z',
         work_items: [], agents: [], next_wi_id: 1
       }),
     };
     const fs = makeFsOps(files);
-    const w1 = createWorkItem({ ...BASE_WI_CONFIG, feature: 'feature-1' }, '/h', fs);
-    const w2 = createWorkItem({ ...BASE_WI_CONFIG, feature: 'feature-2' }, '/h', fs);
-    expect(w1.id).toBe('feature-1_wi-1');
-    expect(w2.id).toBe('feature-2_wi-1');
+    const w1 = createWorkItem({ ...BASE_WI_CONFIG, feature: 'TEST-1' }, '/h', fs);
+    const w2 = createWorkItem({ ...BASE_WI_CONFIG, feature: 'TEST-2' }, '/h', fs);
+    expect(w1.id).toBe('TEST-1_WI-1');
+    expect(w2.id).toBe('TEST-2_WI-1');
   });
 
   it('should throw when feature file does not exist', () => {
@@ -481,13 +451,19 @@ describe('createWorkItem', () => {
       '/h/work-items/_index.json': JSON.stringify({ items: [] }),
     };
     const fs = makeFsOps(files);
-    expect(() => createWorkItem({ ...BASE_WI_CONFIG, feature: 'feature-999' }, '/h', fs))
+    expect(() => createWorkItem({ ...BASE_WI_CONFIG, feature: 'TEST-999' }, '/h', fs))
       .toThrow(/ENOENT/);
   });
 
-  it('should throw for invalid feature name', () => {
+  it('should throw for invalid feature name (path traversal)', () => {
     const { fs } = seedWorkItemFs();
     expect(() => createWorkItem({ ...BASE_WI_CONFIG, feature: '../../etc' }, '/h', fs))
+      .toThrow(/Invalid feature/);
+  });
+
+  it('should throw for invalid feature name (lowercase old format)', () => {
+    const { fs } = seedWorkItemFs();
+    expect(() => createWorkItem({ ...BASE_WI_CONFIG, feature: 'lowercase-1' }, '/h', fs))
       .toThrow(/Invalid feature/);
   });
 
@@ -513,7 +489,7 @@ describe('createWorkItem', () => {
     expect(wi).toHaveProperty('created_at');
     expect(wi).toHaveProperty('updated_at');
 
-    // Verify id pattern
-    expect(wi.id).toMatch(/^feature-\d+_wi-\d+$/);
+    // Verify id pattern (Jira-style with uppercase WI)
+    expect(wi.id).toMatch(/^[A-Z][A-Z0-9]+-\d+_WI-\d+$/);
   });
 });

@@ -24,20 +24,20 @@ Execute assigned work immediately. Do not wait for confirmation or ask clarifyin
 
 ## Core Rules
 
-- Work exclusively on `feature-*_wi-*` branches. NEVER commit to main/master/develop.
+- Work exclusively on `feature/*_WI-*` branches. NEVER commit to main/master/develop.
 - Write production code AND unit tests for assigned work items.
 - Follow existing code patterns, naming conventions, and project structure.
 - Agents NEVER fabricate timestamps. When you need one (e.g., wi-*.json history entries), run `date -u +%Y-%m-%dT%H:%M:%SZ` via Bash and use the output.
 - After approval, lead auto-merges your branch to the feature branch.
-- When done, update feature-{id}_wi-{id}.json status to REVIEW and message the lead.
+- When done, update {ticket-id}_WI-{id}.json status to REVIEW and message the lead.
 - Address ALL review feedback on CHANGES_REQUESTED. Re-submit when fixed.
 
 ## Gitflow Reminder
 
-- Branch: `{feature_branch}_wi-{id}` (e.g., `feature-1_wi-3`)
-- Create from feature branch: `git checkout feature-{id} && git checkout -b feature-{id}_wi-{id}`
-- Commits: `[hive:dev-N] feature-{id}_wi-{id}: {description}`
-- Rebase onto the **feature branch** (`feature-{id}`) before submitting for review.
+- Branch: `feature/{ticket-id}_WI-{id}` (e.g., `feature/ABC-1234_WI-3`)
+- Create from feature branch: `git checkout feature/{ticket-id} && git checkout -b feature/{ticket-id}_WI-{id}`
+- Commits: `[hive:dev-N] {ticket-id}_WI-{id}: {description}`
+- Rebase onto the **feature branch** (`feature/{ticket-id}`) before submitting for review.
 - NEVER push to main, master, develop, release/*, or hotfix/*.
 
 ## Communication Protocol

@@ -26,13 +26,13 @@ beforeAll(() => {
 
 describe('Work item schema', () => {
   const validWorkItem = {
-    id: 'feature-1_wi-1',
+    id: 'TEST-1_WI-1',
     title: 'Implement login',
     type: 'feature',
     risk: 'medium',
     status: 'OPEN',
     assignee: null,
-    feature: 'feature-1',
+    feature: 'TEST-1',
     branch: null,
     description: 'Implement the login page',
     acceptance_criteria: ['Users can log in', 'Error messages shown'],
@@ -83,6 +83,9 @@ describe('Work item schema', () => {
     expect(validate(bad)).toBe(false);
     const bad2 = { ...validWorkItem, id: 'wi-1' };
     expect(validate(bad2)).toBe(false);
+    // Old lowercase format should now fail
+    const bad3 = { ...validWorkItem, id: 'feature-1_wi-1' };
+    expect(validate(bad3)).toBe(false);
   });
 
   it('rejects additional properties', () => {
@@ -121,14 +124,14 @@ describe('Work item schema', () => {
 
 describe('Feature schema', () => {
   const validFeature = {
-    id: 'feature-1',
+    id: 'TEST-1',
     name: 'Login Feature',
     status: 'IN_PROGRESS',
     plan: 'plan-2025-01-01.md',
-    branch: 'feature-1',
+    branch: 'feature/TEST-1',
     created_at: '2025-01-01T00:00:00Z',
     updated_at: '2025-01-01T00:00:00Z',
-    work_items: ['feature-1_wi-1', 'feature-1_wi-2'],
+    work_items: ['TEST-1_WI-1', 'TEST-1_WI-2'],
     agents: ['dev-1', 'reviewer', 'tester'],
     next_wi_id: 3,
   };
@@ -152,7 +155,8 @@ describe('Feature schema', () => {
 
   it('rejects invalid id pattern', () => {
     const validate = ajv.compile(loadSchema('feature.schema.json'));
-    const bad = { ...validFeature, id: 'FEATURE-1' };
+    // Old lowercase format should fail
+    const bad = { ...validFeature, id: 'feature-1' };
     expect(validate(bad)).toBe(false);
   });
 
@@ -394,8 +398,8 @@ describe('Schema strictness (additionalProperties: false)', () => {
   it('work-item rejects extra fields', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const valid = {
-      id: 'feature-1_wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'OPEN', feature: 'feature-1', description: 'Test',
+      id: 'TEST-1_WI-1', title: 'Test', type: 'feature', risk: 'low',
+      status: 'OPEN', feature: 'TEST-1', description: 'Test',
       acceptance_criteria: [], dependencies: [], history: [],
       created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z',
     };
@@ -406,8 +410,8 @@ describe('Schema strictness (additionalProperties: false)', () => {
   it('work-item history entry accepts valid fields (action, agent, ts, notes)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const wi = {
-      id: 'feature-1_wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'OPEN', feature: 'feature-1', description: 'Test',
+      id: 'TEST-1_WI-1', title: 'Test', type: 'feature', risk: 'low',
+      status: 'OPEN', feature: 'TEST-1', description: 'Test',
       acceptance_criteria: [], dependencies: [],
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z' },
@@ -421,8 +425,8 @@ describe('Schema strictness (additionalProperties: false)', () => {
   it('work-item history entry rejects extra fields (additionalProperties)', () => {
     const validate = ajv.compile(loadSchema('work-item.schema.json'));
     const wi = {
-      id: 'feature-1_wi-1', title: 'Test', type: 'feature', risk: 'low',
-      status: 'OPEN', feature: 'feature-1', description: 'Test',
+      id: 'TEST-1_WI-1', title: 'Test', type: 'feature', risk: 'low',
+      status: 'OPEN', feature: 'TEST-1', description: 'Test',
       acceptance_criteria: [], dependencies: [],
       history: [
         { action: 'TESTS_PASS', agent: 'tester', ts: '2026-01-01T00:00:00Z', rogue_field: 'bad' },

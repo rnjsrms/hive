@@ -20,7 +20,7 @@ try {
   // Fallback: try to extract WI ID from subject via regex (case-insensitive)
   // Supports both "wi-123" and "feature-42_wi-123" formats
   if (!wiId) {
-    const match = subject.match(/(?:feature-\w+_)?WI-\d+/i);
+    const match = subject.match(/[A-Z][A-Z0-9]+-\d+_WI-\d+/) || subject.match(/(?:feature-\w+_)?WI-\d+/i);
     if (match) wiId = match[0];
   }
 

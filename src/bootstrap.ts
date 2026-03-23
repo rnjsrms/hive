@@ -52,7 +52,6 @@ export function getRequiredFiles(baseBranch: string = 'develop'): Record<string,
     'work-items/_index.json': { items: [] },
     'work-items/_sequence.json': { next_id: 1 },
     'features/_index.json': { items: [] },
-    'features/_sequence.json': { next_id: 1 },
     'agents/_index.json': { agents: [] },
     'role-catalog.json': DEFAULT_ROLE_CATALOG,
   };
@@ -162,7 +161,7 @@ export function validateState(rootDir: string, fs: FsOps): ValidationResult {
   // Validate feature files and cross-references
   const featuresDir = `${hiveDir}/features`;
   if (fs.existsSync(featuresDir)) {
-    const featureFiles = fs.readdirSync(featuresDir).filter(f => f.startsWith('feature-') && f.endsWith('.json'));
+    const featureFiles = fs.readdirSync(featuresDir).filter(f => f.endsWith('.json') && !f.startsWith('_'));
     for (const file of featureFiles) {
       const path = `${featuresDir}/${file}`;
       try {

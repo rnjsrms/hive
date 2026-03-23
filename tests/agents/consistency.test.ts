@@ -51,9 +51,9 @@ describe('Agent cross-consistency', () => {
     }
   });
 
-  it('developer agent uses _wi-{id} compound branch naming', () => {
+  it('developer agent uses _WI-{id} compound branch naming', () => {
     const devContent = readAgent('hive-developer.md');
-    expect(devContent).toContain('_wi-{id}');
+    expect(devContent).toContain('_WI-{id}');
     expect(devContent).not.toContain('feature/wi-');
   });
 
@@ -67,9 +67,9 @@ describe('Agent cross-consistency', () => {
     }
   });
 
-  it('hive.md (lead) uses _wi-{id} compound branch naming convention', () => {
+  it('hive.md (lead) uses _WI-{id} compound branch naming convention', () => {
     const leadContent = readAgent('hive.md');
-    expect(leadContent).toContain('_wi-{id}');
+    expect(leadContent).toContain('_WI-{id}');
   });
 
   it('no agent references WI-NNNN.json file paths (should be wi-{id}.json)', () => {
@@ -131,10 +131,10 @@ describe('Agent cross-consistency', () => {
     const dev = readAgent('hive-developer.md');
     const reviewer = readAgent('hive-reviewer.md');
     // Developer rebases on feature branch
-    expect(dev).toContain('feature-{id}');
+    expect(dev).toContain('feature/{ticket-id}');
     expect(dev).toContain('feature branch');
     // Reviewer diffs against feature branch
-    expect(reviewer).toContain('feature-{id}');
-    expect(reviewer).toContain('_wi-{id}');
+    expect(reviewer).toContain('feature/{ticket-id}');
+    expect(reviewer).toContain('_WI-{id}');
   });
 });

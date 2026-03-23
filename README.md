@@ -69,9 +69,9 @@ Shall I proceed?
 Hive creates a feature branch and assembles a team.
 
 ```
-[hive:lead] Creating feature branch: feature-1
+[hive:lead] Creating feature branch: feature/ABC-1234
 Spawning monitor agent... ✓
-Spawning developer for feature-1_wi-1... ✓
+Spawning developer for ABC-1234_WI-1... ✓
 ```
 
 ### Phase 4: Execute
@@ -79,8 +79,8 @@ Spawning developer for feature-1_wi-1... ✓
 Developers implement each work item on isolated branches. Each developer works in its own git worktree so there are no conflicts.
 
 ```
-[hive:dev-1] [IN_PROGRESS] feature-1_wi-1: Implementing JWT token generation...
-[hive:dev-1] [REVIEW] feature-1_wi-1: Ready for review. Added token.ts with sign/verify functions and unit tests.
+[hive:dev-1] [IN_PROGRESS] ABC-1234_WI-1: Implementing JWT token generation...
+[hive:dev-1] [REVIEW] ABC-1234_WI-1: Ready for review. Added token.ts with sign/verify functions and unit tests.
 ```
 
 ### Phase 5: Review & Test
@@ -88,8 +88,8 @@ Developers implement each work item on isolated branches. Each developer works i
 After each developer finishes, Hive automatically spawns a reviewer and then a tester.
 
 ```
-[hive:reviewer] [APPROVED] feature-1_wi-1: Code quality is good. Token expiry handling is solid.
-[hive:tester] [TESTS_PASS] feature-1_wi-1: All 12 tests pass. Edge cases covered.
+[hive:reviewer] [APPROVED] ABC-1234_WI-1: Code quality is good. Token expiry handling is solid.
+[hive:tester] [TESTS_PASS] ABC-1234_WI-1: All 12 tests pass. Edge cases covered.
 ```
 
 ### Phase 6: Feature Complete
@@ -97,9 +97,9 @@ After each developer finishes, Hive automatically spawns a reviewer and then a t
 When all work items pass review and testing, Hive creates a PR for you to merge.
 
 ```
-[hive:lead] All work items merged to feature-1.
-Created PR #42: [hive] JWT Authentication (feature-1)
-  Base: develop ← Head: feature-1
+[hive:lead] All work items merged to feature/ABC-1234.
+Created PR #42: [hive] JWT Authentication (ABC-1234)
+  Base: develop ← Head: feature/ABC-1234
   Ready for your review and merge.
 ```
 
@@ -127,23 +127,23 @@ Agents that make changes (code, tests, documents) work in isolated git worktrees
 Hive uses a three-level branch hierarchy:
 
 ```
-develop                          ← base branch (your integration branch)
-  └── feature-1                  ← feature branch (created by Hive)
-        ├── feature-1_wi-1       ← work item branch (one per task)
-        ├── feature-1_wi-2
-        └── feature-1_wi-3
-  └── feature-2
-        ├── feature-2_wi-1       ← WI IDs restart at 1 per feature
-        └── feature-2_wi-2
+develop                              ← base branch (your integration branch)
+  └── feature/ABC-1234               ← feature branch (created by Hive)
+        ├── feature/ABC-1234_WI-1    ← work item branch (one per task)
+        ├── feature/ABC-1234_WI-2
+        └── feature/ABC-1234_WI-3
+  └── feature/XYZ-5678
+        ├── feature/XYZ-5678_WI-1   ← WI IDs restart at 1 per feature
+        └── feature/XYZ-5678_WI-2
 ```
 
 **How it flows:**
-1. Lead creates `feature-1` from `develop`
-2. Developer creates `feature-1_wi-1` from `feature-1`
+1. Lead creates `feature/ABC-1234` from `develop`
+2. Developer creates `feature/ABC-1234_WI-1` from `feature/ABC-1234`
 3. Developer implements, reviewer reviews, tester tests
-4. Lead merges `feature-1_wi-1` back into `feature-1` (with `--no-ff`)
+4. Lead merges `feature/ABC-1234_WI-1` back into `feature/ABC-1234` (with `--no-ff`)
 5. Repeat for all work items
-6. Lead creates a PR from `feature-1` to `develop` — you merge it
+6. Lead creates a PR from `feature/ABC-1234` to `develop` — you merge it
 
 **Base branch detection:**
 Hive auto-detects your base branch in this order:
@@ -151,7 +151,7 @@ Hive auto-detects your base branch in this order:
 2. Your repo's default branch (auto-detected from remote)
 3. `main` (fallback)
 
-**Work item IDs are feature-scoped.** `feature-1_wi-1` and `feature-2_wi-1` are different work items. The compound ID (`feature-{id}_wi-{id}`) is globally unique.
+**Work item IDs are feature-scoped.** `ABC-1234_WI-1` and `XYZ-5678_WI-1` are different work items. The compound ID (`{ticket-id}_WI-{id}`) is globally unique.
 
 ## Checking Status
 
@@ -186,12 +186,11 @@ Or just ask the lead agent: *"What's the status?"*
 ├── research/                 # Research findings from the researcher agent
 ├── work-items/               # Work item JSON files (one per task)
 │   ├── _index.json           # Summary of all work items
-│   ├── feature-1_wi-1.json   # Individual work item state
-│   └── feature-1_wi-2.json
+│   ├── ABC-1234_WI-1.json    # Individual work item state
+│   └── ABC-1234_WI-2.json
 ├── features/                 # Feature groupings
 │   ├── _index.json           # Summary of all features
-│   ├── _sequence.json        # Feature ID counter
-│   └── feature-1.json        # Feature state (includes WI counter)
+│   └── ABC-1234.json          # Feature state (includes WI counter)
 ├── agents/                   # Agent registry
 │   └── _index.json           # Active agents and their roles
 ├── logs/                     # Activity logs (auto-generated by hooks)
@@ -218,11 +217,11 @@ Hive detects in-progress features by reading `.hive/` state files. It validates 
 ```
 [hive:lead] Hive Orchestration System v2.2.0
 Initializing workspace...
-Detected in-progress feature: feature-1 (JWT Authentication)
+Detected in-progress feature: ABC-1234 (JWT Authentication)
   WI-1: MERGED ✓
   WI-2: IN_PROGRESS (stalled — reassigning)
   WI-3: OPEN
-Resuming feature-1...
+Resuming ABC-1234...
 ```
 
 ## Cancelling Work

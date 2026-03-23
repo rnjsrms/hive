@@ -14,7 +14,7 @@ try {
   const normalized = filePath.replace(/\\\\/g, '/');
 
   // Only process work-item files
-  const match = normalized.match(/\.hive\/work-items\/(?:feature-\w+_)?(wi-\d+)\.json$/);
+  const match = normalized.match(/\.hive\/work-items\/[A-Z][A-Z0-9]+-\d+_WI-\d+\.json$/) || normalized.match(/\.hive\/work-items\/(?:feature-\w+_)?(wi-\d+)\.json$/);
   if (!match) process.exit(0);
 
   // Read the new file content from disk
